@@ -65,6 +65,14 @@ namespace syntax {
     { "lsl", LSL }, { "lsr", LSR }
   };
 
+  enum SIZE {
+    BYTE, HALFWORD, WORD
+  };
+
+  static std::map<std::string, SIZE> sizeMap {
+    { "b", BYTE }, { "h", HALFWORD }
+  };
+
   class Node {
     public:
       Node();
@@ -102,9 +110,8 @@ namespace syntax {
       unsigned int assemble() override;
 
     protected:
-      REGISTER Rd;
-      std::string label = nullptr;
-      unsigned int address;
+      std::variant<std::monostate, REGISTER, std::string> _Rd;
+      unsigned int offset;
   };
 
   class FlexOperand : public Node {
@@ -146,9 +153,9 @@ namespace syntax {
       FlexOperand Rm;
   };
 
-  class ShiftOperation : public InstructionNode {
+  class ShiftNode : public InstructionNode {
     public:
-      ShiftOperation(std::vector<lexer::Token>);
+      ShiftNode(std::vector<lexer::Token>);
       unsigned int assemble() override;
 
     protected:
@@ -156,6 +163,21 @@ namespace syntax {
       REGISTER Rn;
       std::variant<std::monostate, REGISTER, int> Rs;
 
+
+    private:
+      std::variant<std::monostate, REGISTER, int> parseRegOrImm();
+  };
+
+  class LoadStoreNode : public InstructionNode {
+    public:
+      LoadStoreNode(std::vector<lexer::Token>);
+      unsigned int assemble() override;
+
+    protected:
+      SIZE size;
+      REGISTER Rd;
+      REGISTER Rn;
+      std::variant<std::monostate, REGISTER, int> Rs;
 
     private:
       std::variant<std::monostate, REGISTER, int> parseRegOrImm();

@@ -1,4 +1,5 @@
 #include "parser.h"
+#include "../error.h"
 #include <vector>
 #include <iostream>
 
@@ -19,8 +20,15 @@ namespace parser {
       return new syntax::TriOperandNode(statement);
     
     if (statement[0].type() == lexer::SHIFT)
-      return new syntax::ShiftOperation(statement);
+      return new syntax::ShiftNode(statement);
 
+    if (statement[0].type() == lexer::BRANCH)
+      return new syntax::BranchNode(statement);
+
+    // if (statement[0].type() == lexer::LOAD_STORE)
+    //   return new syntax::LoadStoreNode(statement);
+
+    throw SyntaxError("Unrecognised instruction", statement, 0);
     // return new syntax::BiOperandNode();
   }
 }

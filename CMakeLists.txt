@@ -8,9 +8,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 include(CTest)
 enable_testing()
 
-find_package(Curses REQUIRED)
-include_directories(${CURSES_INCLUDE_DIR})
-
 add_executable(
   iRISC 
   src/main.cpp
@@ -23,8 +20,6 @@ add_executable(
   src/parser/syntax.cpp
   src/parser/syntax.h
 )
-
-target_link_libraries(iRISC ${CURSES_LIBRARIES})
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})

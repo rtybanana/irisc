@@ -110,6 +110,31 @@ std::tuple<std::string, std::string, std::string> InstructionNode::splitOpCode(l
 
 
 /**
+ * BranchNode
+ * Responsible for parsing and delegating parsing of branch instructions B, BL and BX
+ */
+BranchNode::BranchNode(std::vector<lexer::Token> statement) : InstructionNode(statement) {
+  auto [operation, modifier, condition] = splitOpCode(nextToken());
+  this->op = opMap[operation];
+  this->setFlags = false;
+  this->cond = condMap[condition];
+
+
+  try { this->_Rd = parseRegister(peekToken()); }               // attempt to parse as register by peeking at the next token
+  catch(SyntaxError e) {  }                                     // catch and carry on if syntax error
+  
+  if (this->_Rd.index() == 0) {
+    if (peekToken().type() == lexer::LABEL) this->_Rd = nextToken().value();
+    else throw SyntaxError("Expected either REGISTER or LABEL value - received " + lexer::tokenNames[peekToken().type()] + " '" + peekToken().value() + "' instead.", statement, currentToken);
+  }
+}
+
+unsigned int BranchNode::assemble() {
+  return 0;
+}
+
+
+/**
  * BiOperandNode
  * Responsible for parsing and delegating parsing of a binary operand instruction in ARMv7 assembly.
  */
@@ -225,10 +250,10 @@ unsigned int TriOperandNode::assemble() {
 }
 
 /**
- * ShiftOperation
+ * ShiftNode
  * Responsible for parsing shift operations, a special form of TriOperandNode.
  */
-ShiftOperation::ShiftOperation(std::vector<lexer::Token> statement) : InstructionNode(statement) {
+ShiftNode::ShiftNode(std::vector<lexer::Token> statement) : InstructionNode(statement) {
   auto [operation, modifier, condition] = splitOpCode(nextToken());
   this->op = opMap[operation];
   this->setFlags = modifier.empty() ? false : true;
@@ -242,7 +267,7 @@ ShiftOperation::ShiftOperation(std::vector<lexer::Token> statement) : Instructio
   this->Rs = parseRegOrImm();
 }
 
-std::variant<std::monostate, REGISTER, int> ShiftOperation::parseRegOrImm() {
+std::variant<std::monostate, REGISTER, int> ShiftNode::parseRegOrImm() {
   std::variant<std::monostate, REGISTER, int> flex;
   try { flex = parseRegister(peekToken()); }                // attempt to parse as register by peeking at the next token
   catch(SyntaxError e) {  }                                 // catch and carry on if syntax error
@@ -259,7 +284,7 @@ std::variant<std::monostate, REGISTER, int> ShiftOperation::parseRegOrImm() {
   return flex;
 }
 
-unsigned int ShiftOperation::assemble() {
+unsigned int ShiftNode::assemble() {
   return 0;
 }
 
