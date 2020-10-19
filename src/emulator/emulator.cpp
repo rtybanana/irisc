@@ -1,4 +1,5 @@
 #include "emulator.h"
+#include <bit>
 
 using namespace vm;
 
@@ -23,19 +24,19 @@ bool Emulator::checkCondition(syntax::CONDITION) {
 /**
  * Simplifies the flex operand down to a single source value, fetching register values and applying shifts.
  */
-int Emulator::deflex(syntax::FlexOperand flex) {
+uint32_t Emulator::deflex(syntax::FlexOperand flex) {
   int deflex;
 
-  auto [Rm, shift, Rs] = flex.unpack();
-  if (flex.isImm()) return std::get<int>(Rm);                               // return value of immediate (short circuit)
-  else deflex = registers[std::get<syntax::REGISTER>(Rm)];                  // get value in register
+  auto [Rm, shift, Rs, immShift] = flex.unpack();
+  if (flex.isImm()) return std::rotr((uint32_t)std::get<int>(Rm), immShift);      // return value of immediate (short circuit)
+  else deflex = registers[std::get<syntax::REGISTER>(Rm)];                        // get value in register
 
   if (flex.shifted()) {
     int shiftBy;
-    if (flex.shiftedByImm()) shiftBy = std::get<int>(flex.Rs());            // get value of immediate shift
-    else shiftBy = registers[std::get<syntax::REGISTER>(flex.Rs())];        // get value in shift register
+    if (flex.shiftedByImm()) shiftBy = std::get<int>(flex.Rs());                  // get value of immediate shift
+    else shiftBy = registers[std::get<syntax::REGISTER>(flex.Rs())];              // get value in shift register
 
-    deflex = applyShift(flex.shift(), deflex, shiftBy);
+    deflex = applyShift(flex.shift(), deflex, shiftBy);                           // apply the unpacked shift
   }
   
   return deflex;
@@ -44,7 +45,7 @@ int Emulator::deflex(syntax::FlexOperand flex) {
 /**
  * Applies a single shift operation.
  */
-int Emulator::applyShift(syntax::SHIFT shift, int value, int amount) {
+uint32_t Emulator::applyShift(syntax::SHIFT shift, int value, int amount) {
   switch(shift) {
     case syntax::LSL:
       return value <<= amount;
@@ -66,7 +67,7 @@ void Emulator::executeBiOperand(syntax::BiOperandNode* instruction) {
   auto [op, cond, set, dest, flex] = instruction->unpack();         // unpack the instruction
   if (!checkCondition(cond)) return;                                // returns early if condition code is not satisfied
 
-  int src = deflex(flex);                                           // deflex the flex operand into a value
+  uint32_t src = deflex(flex);                                      // deflex the flex operand into a value
   switch(op) {                                                      // check opcode and execute instruction
     case syntax::MOV:
       registers[dest] = src;
@@ -91,8 +92,8 @@ void Emulator::executeTriOperand(syntax::TriOperandNode* instruction) {
   auto [op, cond, set, dest, src, flex] = instruction->unpack();    // unpack the instruction
   if (!checkCondition(cond)) return;                                // returns early if condition code is not satisfied
 
-  int m = deflex(flex);                                             // deflex the flex operand into a value
-  int n = registers[src];
+  uint32_t m = deflex(flex);                                             // deflex the flex operand into a value
+  uint32_t n = registers[src];
   int result;
   switch(op) {                                                      // check opcode and execute instruction
     case syntax::ADD:

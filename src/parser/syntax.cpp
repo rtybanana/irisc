@@ -57,7 +57,7 @@ REGISTER Node::parseRegister(lexer::Token token) {
   else throw SyntaxError("REGISTER expected - received " + lexer::tokenNames[token.type()] + " '" + token.value() + "' instead.", statement, currentToken - 1);
 }
 
-int Node::parseImmediate(lexer::Token token) {
+uint64_t Node::parseImmediate(lexer::Token token) {
   int base = 0;
   int start;
   if (token.type() == lexer::IMM_BIN) {
@@ -78,27 +78,40 @@ int Node::parseImmediate(lexer::Token token) {
   }
   else throw SyntaxError("IMMEDIATE value expected - received " + lexer::tokenNames[token.type()] + " '" + token.value() + "' instead.", statement, token.tokenNumber());
 
-  return std::strtoul(token.value().substr(start + 1, token.value().size()).c_str(), nullptr, base);
+  return std::strtoull(token.value().substr(start + 1, token.value().size()).c_str(), nullptr, base);
 }
 
-int Node::parseImmediate(lexer::Token token, unsigned int bits) {
-  int imm = parseImmediate(token);
+/**
+ * Parse immediate with maximum bit-width
+ */
+uint32_t Node::parseImmediate(lexer::Token token, unsigned int bits) {
+  uint64_t imm = parseImmediate(token);
   if (imm < pow(2, bits)) return imm;
   else throw NumericalError("IMMEDIATE value '" + token.value() + "' (decimal " + std::to_string(imm) + ") is greater than the " + std::to_string(bits) + "-bit maximum.", statement, token.tokenNumber());
 }
 
-int Node::parseImmediate(lexer::Token token, unsigned int bits, unsigned int& immShift) {
-  int imm = parseImmediate(token); 
-  std::cout << std::bitset<32>(imm) << std::endl;
-  int temp = imm;
+/**
+ * Parse immediate value with maximum bit-width and ARMv7 barrel shifter paradigm
+ */
+uint32_t Node::parseImmediate(lexer::Token token, unsigned int bits, unsigned int& immShift) {
+  uint64_t imm = parseImmediate(token); 
+  if (imm == 0) return imm;                                   // return 0 if imm == 0 (short circuit)
+
+  std::cout << std::bitset<64>(imm) << std::endl;
+
   int bottombit = ffs(imm) - 1;
-  std::cout << bottombit << std::endl;
-  if (bottombit > 7) imm = std::rotl((uint32_t)imm, 32 - bottombit);
-  if ((ffs(imm) - 1) > 7) 
-    throw NumericalError("IMMEDIATE value '" + token.value() + "' (decimal " + std::to_string(temp) + ") cannot be implicitly represented in 12 bits.", statement, token.tokenNumber());
-  
-  std::cout << std::bitset<32>(imm) << std::endl;
-  immShift = 32 - bottombit;
+  int topbit = (int)std::log2(imm);
+  std::cout << bottombit << ", " << topbit << std::endl;
+  if (topbit > 31)
+    throw NumericalError("IMMEDIATE value '" + token.value() + "' (decimal " + std::to_string(imm) + ") cannot be represented in 32 bits.", statement, token.tokenNumber());
+  if ((topbit - bottombit) > --bits)
+    throw NumericalError("IMMEDIATE value '" + token.value() + "' (decimal " + std::to_string(imm) + ") cannot be implicitly represented with a maximum set-bit width of 8.", statement, token.tokenNumber());
+
+  if (topbit > bits) { 
+    imm = std::rotr((uint32_t)imm, topbit - 7);
+    immShift = 32 - (topbit - 7);
+  }
+    
   return imm;
 }
 
@@ -233,7 +246,7 @@ unsigned int BiOperandNode::assemble() {
     std::cout << "src register: " << reg << ", (" << std::bitset<4>(reg) << ")" << std::endl;
     instruction = (instruction << 4) | reg;
   }
-  else throw AssemblyError("Source operand Rm is neither a REGISTER nor IMMEDIATE value. Most likely a parser bug.", statement);
+  else throw AssemblyError("Source operand Rm is neither a REGISTER nor IMMEDIATE value. This is most likely a parser bug.", statement);
 
   std::cout << std::bitset<32>(instruction) << std::endl;
   return 0;

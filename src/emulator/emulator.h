@@ -19,14 +19,14 @@ namespace vm {
     private:
       Heap heap;
       Stack stack;
-      int registers[15];
+      uint32_t registers[15];
       std::vector<syntax::Node*> program;
 
       void executeBiOperand(syntax::BiOperandNode*);
       void executeTriOperand(syntax::TriOperandNode*);
       bool checkCondition(syntax::CONDITION);
-      int deflex(syntax::FlexOperand);
-      int applyShift(syntax::SHIFT, int, int);
+      uint32_t deflex(syntax::FlexOperand);
+      uint32_t applyShift(syntax::SHIFT, int, int);
       void setFlags(int value);
 
 

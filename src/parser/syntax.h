@@ -99,17 +99,17 @@ namespace syntax {
       bool hasToken();
       bool parseComma(lexer::Token);
       REGISTER parseRegister(lexer::Token);
-      int parseImmediate(lexer::Token, unsigned int);
-      int parseImmediate(lexer::Token, unsigned int, unsigned int&);
+      uint32_t parseImmediate(lexer::Token, unsigned int);
+      uint32_t parseImmediate(lexer::Token, unsigned int, unsigned int&);
 
     private:
-      int parseImmediate(lexer::Token);
+      uint64_t parseImmediate(lexer::Token);
   };
 
   class InstructionNode : public Node {
     public:
       InstructionNode(std::vector<lexer::Token>);
-      virtual unsigned int assemble() = 0;
+      virtual uint32_t assemble() = 0;
       OPERATION op() const { return _op; };
       CONDITION cond() const { return _cond; };
       bool setFlags() const { return _setFlags; };
@@ -125,11 +125,11 @@ namespace syntax {
   class BranchNode : public InstructionNode {
     public:
       BranchNode(std::vector<lexer::Token>);
-      unsigned int assemble() override;
+      uint32_t assemble() override;
 
     protected:
       std::variant<std::monostate, REGISTER, std::string> _Rd;
-      unsigned int _offset;
+      uint32_t _offset;
   };
 
   class FlexOperand : public Node {
@@ -142,8 +142,9 @@ namespace syntax {
       unsigned int immShift() const { return _immShift; };
       std::tuple<std::variant<std::monostate, REGISTER, int>, 
                  std::optional<SHIFT>, 
-                 std::variant<std::monostate, REGISTER, int>> 
-        unpack() const { return {_Rm, _shift, _Rs}; };
+                 std::variant<std::monostate, REGISTER, int>, 
+                 unsigned int> 
+        unpack() const { return {_Rm, _shift, _Rs, _immShift}; };
 
       bool isReg() const { return _Rm.index() == 1; };
       bool isImm() const { return _Rm.index() == 2; };
@@ -165,7 +166,7 @@ namespace syntax {
   class BiOperandNode : public InstructionNode {
     public:
       BiOperandNode(std::vector<lexer::Token>);
-      unsigned int assemble() override;
+      uint32_t assemble() override;
       REGISTER Rd() const { return _Rd; };
       FlexOperand flex() const { return _flex; };
       std::tuple<OPERATION, CONDITION, bool, REGISTER, FlexOperand> unpack() const { return {_op, _cond, _setFlags, _Rd, _flex}; };
