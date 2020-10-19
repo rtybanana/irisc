@@ -3,7 +3,9 @@
 #include <algorithm>
 #include <iostream>
 #include <bitset>
+#include <bit>
 #include <cmath>
+#include <strings.h>
 
 using namespace syntax;
 
@@ -41,6 +43,10 @@ bool Node::hasToken() {
   return false;
 }
 
+
+/**
+ * Functions for parsing various tokens
+ */
 bool Node::parseComma(lexer::Token token) {
   if (token.type() == lexer::COMMA) return true;
   else throw SyntaxError("COMMA expected between operands - received " + lexer::tokenNames[token.type()] + " '" + token.value() + "', instead.", statement, currentToken - 1);
@@ -51,7 +57,7 @@ REGISTER Node::parseRegister(lexer::Token token) {
   else throw SyntaxError("REGISTER expected - received " + lexer::tokenNames[token.type()] + " '" + token.value() + "' instead.", statement, currentToken - 1);
 }
 
-int Node::parseImmediate(lexer::Token token, unsigned int bits) {
+int Node::parseImmediate(lexer::Token token) {
   int base = 0;
   int start;
   if (token.type() == lexer::IMM_BIN) {
@@ -72,11 +78,29 @@ int Node::parseImmediate(lexer::Token token, unsigned int bits) {
   }
   else throw SyntaxError("IMMEDIATE value expected - received " + lexer::tokenNames[token.type()] + " '" + token.value() + "' instead.", statement, token.tokenNumber());
 
-  int imm = std::strtoul(token.value().substr(start + 1, token.value().size()).c_str(), nullptr, base);
+  return std::strtoul(token.value().substr(start + 1, token.value().size()).c_str(), nullptr, base);
+}
+
+int Node::parseImmediate(lexer::Token token, unsigned int bits) {
+  int imm = parseImmediate(token);
   if (imm < pow(2, bits)) return imm;
   else throw NumericalError("IMMEDIATE value '" + token.value() + "' (decimal " + std::to_string(imm) + ") is greater than the " + std::to_string(bits) + "-bit maximum.", statement, token.tokenNumber());
 }
 
+int Node::parseImmediate(lexer::Token token, unsigned int bits, unsigned int& immShift) {
+  int imm = parseImmediate(token); 
+  std::cout << std::bitset<32>(imm) << std::endl;
+  int temp = imm;
+  int bottombit = ffs(imm) - 1;
+  std::cout << bottombit << std::endl;
+  if (bottombit > 7) imm = std::rotl((uint32_t)imm, 32 - bottombit);
+  if ((ffs(imm) - 1) > 7) 
+    throw NumericalError("IMMEDIATE value '" + token.value() + "' (decimal " + std::to_string(temp) + ") cannot be implicitly represented in 12 bits.", statement, token.tokenNumber());
+  
+  std::cout << std::bitset<32>(imm) << std::endl;
+  immShift = 32 - bottombit;
+  return imm;
+}
 
 /**
  * InstructionNode
@@ -93,8 +117,8 @@ std::tuple<std::string, std::string, std::string> InstructionNode::splitOpCode(l
   std::string forceFlags[] = {"cmp", "cmn", "tst", "teq"};    // operations that always set flags regardless of modifier value
 
   using namespace lexer;
-  std::vector<std::string>::iterator it = std::find_if(operations.begin(), operations.end(), [token](const std::string s){ return token.value().substr(0, s.size()) == s; });
-  operation = *it;
+  std::map<std::string, TOKEN>::iterator it = std::find_if(operations.begin(), operations.end(), [token](const std::pair<std::string, TOKEN> op){ return token.value().substr(0, op.first.size()) == op.first; });
+  operation = it->first;
 
   std::string suffix = token.value().substr(operation.size(), token.value().size());
   if (suffix.size() == 1 || suffix.size() == 3) {                                                       // valid operation suffixes are up to 3 letters long maximum
@@ -115,9 +139,9 @@ std::tuple<std::string, std::string, std::string> InstructionNode::splitOpCode(l
  */
 BranchNode::BranchNode(std::vector<lexer::Token> statement) : InstructionNode(statement) {
   auto [operation, modifier, condition] = splitOpCode(nextToken());
-  this->op = opMap[operation];
-  this->setFlags = false;
-  this->cond = condMap[condition];
+  this->_op = opMap[operation];
+  this->_setFlags = false;
+  this->_cond = condMap[condition];
 
 
   try { this->_Rd = parseRegister(peekToken()); }               // attempt to parse as register by peeking at the next token
@@ -140,85 +164,74 @@ unsigned int BranchNode::assemble() {
  */
 BiOperandNode::BiOperandNode(std::vector<lexer::Token> statement) : InstructionNode(statement) {
   auto [operation, modifier, condition] = splitOpCode(nextToken());
-  this->op = opMap[operation];
-  this->setFlags = modifier.empty() ? false : true;
-  this->cond = condMap[condition];
+  this->_op = opMap[operation];
+  this->_setFlags = modifier.empty() ? false : true;
+  this->_cond = condMap[condition];
 
-  this->Rd = parseRegister(nextToken());
+  this->_Rd = parseRegister(nextToken());
 
   peekToken();                                              // peek next token to see if it exists
-  this->Rm = FlexOperand(statement, currentToken);          // parsing delegated to FlexOperand
+  this->_flex = FlexOperand(statement, currentToken);          // parsing delegated to FlexOperand
 }
 
 unsigned int BiOperandNode::assemble() {
   unsigned int instruction = 0;
   std::cout << "assembling..." << std::endl;
 
-  std::cout << "condition: " << cond << ", (" << std::bitset<4>(cond) << ")" << std::endl;
-  instruction |= cond;
+  std::cout << "condition: " << _cond << ", (" << std::bitset<4>(_cond) << ")" << std::endl;
+  instruction |= _cond;
 
   std::cout << "next three clear bits (000) indicate arithmetic operation" << std::endl;
   instruction <<= 3;                // logical shift left 8 for data processing
 
-  std::cout << "op code: " << op << ", (" << std::bitset<4>(op) << ")" << std::endl;
-  instruction <<= 4;
-  instruction |= op;
+  std::cout << "op code: " << _op << ", (" << std::bitset<4>(_op) << ")" << std::endl;
+  instruction = (instruction << 4) | _op;
 
-  std::cout << "set flags: " << (setFlags ? "true" : "false") << ", (" << std::bitset<1>(setFlags) << ")" << std::endl;
-  instruction <<= 1;
-  instruction |= setFlags;
+  std::cout << "set flags: " << (_setFlags ? "true" : "false") << ", (" << std::bitset<1>(_setFlags) << ")" << std::endl;
+  instruction = (instruction << 1) | _setFlags;
 
   std::cout << "next four clear bits (0000) indicate that the operation has two operands" << std::endl;
   instruction <<= 4;
 
-  std::cout << "dest register: " << Rd << ", (" << std::bitset<4>(Rd) << ")" << std::endl;
-  instruction <<= 4;
-  instruction |= Rd;
+  std::cout << "dest register: " << _Rd << ", (" << std::bitset<4>(_Rd) << ")" << std::endl;
+  instruction = (instruction << 4) | _Rd;
 
-
-  if (Rm.Rm().index() == 2) {                                     // operand is immediate
-    int src = std::get<int>(Rm.Rm());
-    std::cout << "src value: " << src << ", (" << std::bitset<8>(src) << ")" << std::endl;
-    instruction <<= 12;                                           // implement auto rotation for larger numbers than imm8
-    instruction |= src;
+  if (_flex.isImm()) {                                                                          // operand is immediate
+    int imm = std::get<int>(_flex.Rm());
+    std::cout << "src value: " << std::rotr((uint32_t)imm, _flex.immShift()) << ", (" << std::bitset<8>(imm) << (_flex.immShift() > 0 ? " - barrel shifted right by " + std::to_string(_flex.immShift()) : "") << ")" << std::endl;
+    instruction = (instruction << 4) | _flex.immShift();
+    instruction = (instruction << 8) | imm;
   }
-  else if (Rm.Rm().index() == 1) {                                // operand is register
-    if (Rm.Rs().index() == 0) {                                   // operand is not optionally shifted
-      std::cout << "next eight clear bits (00000000) indicate that the operation is not optionally shifted" << std::endl;
-      instruction <<= 8;
-    }
-    else {                                                        // operand is optionally shifted
-      SHIFT shiftOp = Rm.shift();
-      if (Rm.Rs().index() == 1) {                                 // shifted by register
-        REGISTER shift = std::get<REGISTER>(Rm.Rs());
+  else if (_flex.isReg()) {                                                                     // operand is register
+    if (_flex.shifted()) {                                                                      // operand is  optionally shifted
+      SHIFT shiftOp = _flex.shift();
+      if (_flex.shiftedByReg()) {                                                               // shifted by register
+        REGISTER shift = std::get<REGISTER>(_flex.Rs());
         std::cout << "shift register: " << shift << ", (" << std::bitset<4>(shift) << ")" << std::endl;
-        instruction <<= 4;                                        // can be simplified heavily
-        instruction |= shift;
+        instruction = (instruction << 4) | shift;
 
         std::cout << "next three bits (xx1) indicate the shift operation (xx) and that the operand is a register (1)" << std::endl;
-        instruction <<= 3;
-        instruction |= shiftOp;
-        instruction <<= 1;
-        instruction |= 1;
+        instruction = (instruction << 2) | shiftOp;
+        instruction = (instruction << 1) | 1;
       }
-      else if (Rm.Rs().index() == 2) {                            // shifted by immediate
-        int shift = std::get<int>(Rm.Rs());
+      else if (_flex.shiftedByImm()) {                                                          // shifted by immediate
+        int shift = std::get<int>(_flex.Rs());
         std::cout << "shift by immediate: " << shift << ", (" << std::bitset<5>(shift) << ")" << std::endl;
-        instruction <<= 5;
-        instruction |= shift;
+        instruction = (instruction << 5) | shift;
 
-        std::cout << "next three bits (xx1) indicate the shift operation (xx) and that the operand is immediate (0)" << std::endl;
-        instruction <<= 2;
-        instruction |= shiftOp;
-        instruction <<= 1;
+        std::cout << "next three bits (xx0) indicate the shift operation (xx) and that the operand is immediate (0)" << std::endl;
+        instruction = ((instruction << 2) | shiftOp) << 1;
       }
       else throw AssemblyError("Optional shift operand Rs is neither a REGISTER nor IMMEDIATE value. Most likely a parser bug.", statement);
     }
+    else {                                                                                      // operand is not optionally shifted
+      std::cout << "next eight clear bits (00000000) indicate that the operation is not optionally shifted" << std::endl;
+      instruction <<= 8;
+    }
 
-    REGISTER src = std::get<REGISTER>(Rm.Rm());
-    std::cout << "src register: " << src << ", (" << std::bitset<4>(src) << ")" << std::endl;
-    instruction <<= 4;
-    instruction |= src;
+    REGISTER reg = std::get<REGISTER>(_flex.Rm());
+    std::cout << "src register: " << reg << ", (" << std::bitset<4>(reg) << ")" << std::endl;
+    instruction = (instruction << 4) | reg;
   }
   else throw AssemblyError("Source operand Rm is neither a REGISTER nor IMMEDIATE value. Most likely a parser bug.", statement);
 
@@ -233,16 +246,16 @@ unsigned int BiOperandNode::assemble() {
  */
 TriOperandNode::TriOperandNode(std::vector<lexer::Token> statement) : InstructionNode(statement) {
   auto [operation, modifier, condition] = splitOpCode(nextToken());
-  this->op = opMap[operation];
-  this->setFlags = modifier.empty() ? false : true;
-  this->cond = condMap[condition];
+  this->_op = opMap[operation];
+  this->_setFlags = modifier.empty() ? false : true;
+  this->_cond = condMap[condition];
 
-  this->Rd = parseRegister(nextToken());
+  this->_Rd = parseRegister(nextToken());
   parseComma(nextToken());
-  this->Rn = parseRegister(nextToken());
+  this->_Rn = parseRegister(nextToken());
 
   peekToken();                                              // peek next token to see if it exists
-  this->Rm = FlexOperand(statement, currentToken);          // parsing delegated to FlexOperand
+  this->_flex = FlexOperand(statement, currentToken);          // parsing delegated to FlexOperand
 }
 
 unsigned int TriOperandNode::assemble() {
@@ -255,16 +268,16 @@ unsigned int TriOperandNode::assemble() {
  */
 ShiftNode::ShiftNode(std::vector<lexer::Token> statement) : InstructionNode(statement) {
   auto [operation, modifier, condition] = splitOpCode(nextToken());
-  this->op = opMap[operation];
-  this->setFlags = modifier.empty() ? false : true;
-  this->cond = condMap[condition];
+  this->_op = opMap[operation];
+  this->_setFlags = modifier.empty() ? false : true;
+  this->_cond = condMap[condition];
 
-  this->Rd = parseRegister(nextToken());
+  this->_Rd = parseRegister(nextToken());
   parseComma(nextToken());
-  this->Rn = parseRegister(nextToken());
+  this->_Rn = parseRegister(nextToken());
   parseComma(nextToken());
 
-  this->Rs = parseRegOrImm();
+  this->_Rs = parseRegOrImm();
 }
 
 std::variant<std::monostate, REGISTER, int> ShiftNode::parseRegOrImm() {
@@ -314,17 +327,21 @@ void FlexOperand::parseShift() {
 
 std::variant<std::monostate, REGISTER, int> FlexOperand::parseRegOrImm(unsigned int immBits) {
   std::variant<std::monostate, REGISTER, int> flex;
-  try { flex = parseRegister(peekToken()); }                // attempt to parse as register by peeking at the next token
-  catch(SyntaxError e) {  }                                 // catch and carry on if syntax error
+  try { flex = parseRegister(peekToken()); }                      // attempt to parse as register by peeking at the next token
+  catch(SyntaxError e) {  }                                       // catch and carry on if syntax error
   
   if (flex.index() == 0) {
-    try { flex = parseImmediate(peekToken(), immBits); }             // attempt to parse as immediate by peeking at the next token
-    catch(SyntaxError e) {  }                               // catch and carry on if syntax error (fail on numerical error)
+    try { 
+      unsigned int immShift = 0;
+      flex = parseImmediate(peekToken(), immBits, immShift);      // attempt to parse as immediate by peeking at the next token
+      this->_immShift = immShift;
+    }                                                           
+    catch(SyntaxError e) {  }                                     // catch and carry on if syntax error (fail on numerical error)
   }
 
   if (flex.index() == 0)
     throw SyntaxError("Expected either REGISTER or IMMEDIATE value - received " + lexer::tokenNames[peekToken().type()] + " '" + peekToken().value() + "' instead.", statement, currentToken); 
   
-  nextToken();                                              // advance token because currently only peeked
+  nextToken();                                                    // advance token because currently only peeked
   return flex;
 }

@@ -10,12 +10,16 @@
 
 #include <vector>
 
-class Heap {
-  private:
-    std::vector<void*> heap;
+namespace vm {
+  class Heap {
+    private:
+      std::vector<void*> heap;
 
-  public:
-    bool allocate();
-};
+    public:
+      Heap() {};
+      bool allocate();
+  };
+}
+
 
 #endif //IRISC_HEAP_H

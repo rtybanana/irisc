@@ -17,6 +17,8 @@
 
 
 namespace syntax {
+
+  // OPCODES
   enum OPERATION {
     // arithmetic operations (shifts assemble to a MOV opcode with an additional shift)
     AND =  0,  EOR, SUB, RSB, ADD, ADC, SBC, RSC, TST, TEQ, CMP, CMN, ORR, MOV, BIC, MVN,
@@ -27,14 +29,20 @@ namespace syntax {
   };
 
   static std::map<std::string, OPERATION> opMap {
-    {"mov", MOV}, {"cmp", CMP},
-    {"add", ADD}, {"sub", SUB},
+    // arithmetic instructions
+    {"and", AND}, {"eor", EOR}, {"sub", SUB}, {"rsb", RSB},
+    {"add", ADD}, {"adc", ADC}, {"sbc", SBC}, {"rsc", RSC},
+    {"tst", TST}, {"teq", TEQ}, {"cmp", CMP}, {"cmn", CMN},
+    {"orr", ORR}, {"mov", MOV}, {"bic", BIC}, {"mvn", MVN},
+    
+    //load/store instructions
     {"ldr", LDR}, {"str", STR},
-    // {"lsl", LSL}, {"lsr", LSR},
-    {"bx" , BX }, {"bl" , BL },
-    {"b"  , B  },
+
+    // branch instructions
+    {"bx",  BX }, {"bl",  BL }, { "b",  B  }
   };
 
+  // CONDITION codes
   enum CONDITION {
     EQ, NE, CS, CC, MI, PL, VS, VC, HI, LS, GE, LT, GT, LE, AL
   };
@@ -46,6 +54,7 @@ namespace syntax {
     {"gt", GT}, {"le", LE}, {"al", AL}, { "" , AL}
   };
 
+  // REGISTER operands
   enum REGISTER {
     R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, SP, LR, PC
   };
@@ -57,14 +66,16 @@ namespace syntax {
     {"r12", R12}, { "sp", SP }, { "lr", LR }, { "pc", PC }
   };
 
+  // SHIFT operations
   enum SHIFT {
     LSL, LSR, ASR, ROR
   };
 
   static std::map<std::string, SHIFT> shiftMap {
-    { "lsl", LSL }, { "lsr", LSR }
+    {"lsl", LSL}, {"lsr", LSR}, {"asr", ASR}, {"ror", ROR}
   };
 
+  // LOAD/STORE sizes
   enum SIZE {
     BYTE, HALFWORD, WORD
   };
@@ -89,17 +100,24 @@ namespace syntax {
       bool parseComma(lexer::Token);
       REGISTER parseRegister(lexer::Token);
       int parseImmediate(lexer::Token, unsigned int);
+      int parseImmediate(lexer::Token, unsigned int, unsigned int&);
+
+    private:
+      int parseImmediate(lexer::Token);
   };
 
   class InstructionNode : public Node {
     public:
       InstructionNode(std::vector<lexer::Token>);
       virtual unsigned int assemble() = 0;
+      OPERATION op() const { return _op; };
+      CONDITION cond() const { return _cond; };
+      bool setFlags() const { return _setFlags; };
 
     protected:
-      OPERATION op;
-      CONDITION cond;
-      bool setFlags;
+      OPERATION _op;
+      CONDITION _cond;
+      bool _setFlags;
 
       std::tuple<std::string, std::string, std::string> splitOpCode(lexer::Token);
   };
@@ -111,7 +129,7 @@ namespace syntax {
 
     protected:
       std::variant<std::monostate, REGISTER, std::string> _Rd;
-      unsigned int offset;
+      unsigned int _offset;
   };
 
   class FlexOperand : public Node {
@@ -121,11 +139,23 @@ namespace syntax {
       std::variant<std::monostate, REGISTER, int> Rm() const { return _Rm; };
       std::variant<std::monostate, REGISTER, int> Rs() const { return _Rs; };
       SHIFT shift() const { return _shift; };
+      unsigned int immShift() const { return _immShift; };
+      std::tuple<std::variant<std::monostate, REGISTER, int>, 
+                 std::optional<SHIFT>, 
+                 std::variant<std::monostate, REGISTER, int>> 
+        unpack() const { return {_Rm, _shift, _Rs}; };
+
+      bool isReg() const { return _Rm.index() == 1; };
+      bool isImm() const { return _Rm.index() == 2; };
+      bool shifted() const { return _Rs.index() > 0; };
+      bool shiftedByReg() const { return _Rs.index() == 1; };
+      bool shiftedByImm() const { return _Rs.index() == 2; };
 
     protected:
       std::variant<std::monostate, REGISTER, int> _Rm;
       std::variant<std::monostate, REGISTER, int> _Rs;
       SHIFT _shift;
+      unsigned int _immShift = 0;
     
     private:
       std::variant<std::monostate, REGISTER, int> parseRegOrImm(unsigned int immBits = 8);
@@ -136,33 +166,44 @@ namespace syntax {
     public:
       BiOperandNode(std::vector<lexer::Token>);
       unsigned int assemble() override;
+      REGISTER Rd() const { return _Rd; };
+      FlexOperand flex() const { return _flex; };
+      std::tuple<OPERATION, CONDITION, bool, REGISTER, FlexOperand> unpack() const { return {_op, _cond, _setFlags, _Rd, _flex}; };
 
     protected:
-      REGISTER Rd;
-      FlexOperand Rm;
+      REGISTER _Rd;
+      FlexOperand _flex;
   };
 
   class TriOperandNode : public InstructionNode {
     public:
       TriOperandNode(std::vector<lexer::Token>);
       unsigned int assemble() override;
+      REGISTER Rd() const { return _Rd; };
+      REGISTER Rn() const { return _Rn; };
+      FlexOperand flex() const { return _flex; };
+      std::tuple<OPERATION, CONDITION, bool, REGISTER, REGISTER, FlexOperand> unpack() const { return {_op, _cond, _setFlags, _Rd, _Rn, _flex}; };
 
     protected:
-      REGISTER Rd;
-      REGISTER Rn;
-      FlexOperand Rm;
+      REGISTER _Rd;
+      REGISTER _Rn;
+      FlexOperand _flex;
   };
 
   class ShiftNode : public InstructionNode {
     public:
       ShiftNode(std::vector<lexer::Token>);
       unsigned int assemble() override;
+      REGISTER Rd() const { return _Rd; };
+      REGISTER Rn() const { return _Rn; };
+      std::variant<std::monostate, REGISTER, int> Rs() const { return _Rs; };
+      std::tuple<OPERATION, CONDITION, bool, REGISTER, REGISTER, std::variant<std::monostate, REGISTER, int>> unpack() const { return {_op, _cond, _setFlags, _Rd, _Rn, _Rs}; };
 
     protected:
-      REGISTER Rd;
-      REGISTER Rn;
-      std::variant<std::monostate, REGISTER, int> Rs;
-
+      REGISTER _Rd;
+      REGISTER _Rn;
+      std::variant<std::monostate, REGISTER, int> _Rs;
+      unsigned int _immShift = 0;
 
     private:
       std::variant<std::monostate, REGISTER, int> parseRegOrImm();
@@ -174,10 +215,10 @@ namespace syntax {
       unsigned int assemble() override;
 
     protected:
-      SIZE size;
-      REGISTER Rd;
-      REGISTER Rn;
-      std::variant<std::monostate, REGISTER, int> Rs;
+      SIZE _size;
+      REGISTER _Rd;
+      REGISTER _Rn;
+      std::variant<std::monostate, REGISTER, int> _Rs;
 
     private:
       std::variant<std::monostate, REGISTER, int> parseRegOrImm();

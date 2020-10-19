@@ -11,13 +11,17 @@
 #include <vector>
 
 // THE STACK IS 8 BYTE ALIGNED - REMEMBER
-class Stack {
-  private:
-    std::vector<int> heap;
+namespace vm {
+  class Stack {
+    private:
+      std::vector<int> heap;
 
-  public:
-    void push();
-    void pop();
-};
+    public:
+      Stack() {};
+      void push();
+      void pop();
+  };
+}
+
 
 #endif //IRISC_STACK_H

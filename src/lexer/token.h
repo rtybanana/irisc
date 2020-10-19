@@ -10,6 +10,7 @@
 
 #include <string>
 #include <vector>
+#include <map>
 
 namespace lexer {
 
@@ -43,35 +44,56 @@ namespace lexer {
     ERROR
   };
 
-  static std::string tokenNames[] = {
-    "LABEL",
-    "BRANCH",
-    "BI_OPERAND",
-    "TRI_OPERAND",
-    "LOAD_STORE",
-    "SHIFT",
+  // static std::vector<std::string> operations = {"mov", "cmp", "add", "sub", "ldr", "str", "lsl", "lsr", "b"};
+  namespace {
+    std::vector<char> modifiers = {'l'};
+    std::vector<std::string> conditions = {"eq", "ne", "cs", "cc", "mi", "pl", "vs", "vc", "hi", "ls", "ge", "lt", "gt", "le", "al"};
+    std::vector<char> sizes = {'b', 'h'};
 
-    "REGISTER",
-    "IMM_BIN",
-    "IMM_OCT",
-    "IMM_DEC",
-    "IMM_HEX",
-    "VARIABLE",
-    "OP_LABEL",
+    std::map<std::string, TOKEN> operations {
+      // bi-operand instructions
+      {"mov", BI_OPERAND}, {"tst", BI_OPERAND}, {"teq", BI_OPERAND}, {"cmp", BI_OPERAND}, {"cmn", BI_OPERAND},
 
-    "COMMA",
-    "OPEN_SQR",
-    "CLOSE_SQR",
-    "EXCLAMATION",
-    
-    "END",
-    "ERROR"
-  };
+      // tri-operand instructions
+      {"and", TRI_OPERAND}, {"eor", TRI_OPERAND}, {"sub", TRI_OPERAND}, {"rsb", TRI_OPERAND}, {"add", TRI_OPERAND}, 
+      {"adc", TRI_OPERAND}, {"sbc", TRI_OPERAND}, {"rsc", TRI_OPERAND}, {"orr", TRI_OPERAND}, {"bic", TRI_OPERAND}, 
+      {"mvn", TRI_OPERAND},
 
-  static std::vector<std::string> operations = {"mov", "cmp", "add", "sub", "ldr", "str", "lsl", "lsr", "b"};
-  static std::vector<char> modifiers = {'l'};
-  static std::vector<std::string> conditions = {"eq", "ne", "cs", "cc", "mi", "pl", "vs", "vc", "hi", "ls", "ge", "lt", "gt", "le", "al"};
-  static std::vector<char> sizes = {'b', 'h'};
+      // shift instructions
+      {"lsl", SHIFT}, {"lsr", SHIFT}, {"asr", SHIFT}, {"ror", SHIFT},
+      
+      //load/store instructions
+      {"ldr", LOAD_STORE}, {"str", LOAD_STORE},
+
+      // branch instructions
+      {"bx", BRANCH}, {"bl", BRANCH}, { "b", BRANCH}
+    };
+
+    std::string tokenNames[] = {
+      "LABEL",
+      "BRANCH",
+      "BI_OPERAND",
+      "TRI_OPERAND",
+      "LOAD_STORE",
+      "SHIFT",
+
+      "REGISTER",
+      "IMM_BIN",
+      "IMM_OCT",
+      "IMM_DEC",
+      "IMM_HEX",
+      "VARIABLE",
+      "OP_LABEL",
+
+      "COMMA",
+      "OPEN_SQR",
+      "CLOSE_SQR",
+      "EXCLAMATION",
+      
+      "END",
+      "ERROR"
+    };
+  }
 
   class Token {
     public:

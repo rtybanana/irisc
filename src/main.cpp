@@ -4,12 +4,14 @@
 #include <regex>
 #include <iomanip>
 
+#include "emulator/emulator.h"
 #include "lexer/lexer.h"
 #include "lexer/token.h"
 #include "parser/parser.h"
 #include "parser/syntax.h"
 
 int main() {
+    vm::Emulator emulator;
 
     // Greeting
     std::cout << "\033[3m" << "i" << "\033[0m" << "\033[1m" << "RISC"  << "\033[0m " << "0.0.1" << std::endl;
@@ -86,20 +88,21 @@ int main() {
 
         // Parse as assembler
         else {
-        }
-
-        try {
-            lexer::Lexer lexer(input_line);
-            parser::Parser parser(lexer);
-            syntax::InstructionNode* node = parser.parseSingle();
-            unsigned int instruction = node->assemble();
+            try {
+                lexer::Lexer lexer(input_line);
+                parser::Parser parser(lexer);
+                syntax::InstructionNode* node = parser.parseSingle();
+                unsigned int instruction = node->assemble();
+                emulator.execute(node);
+                emulator.printRegisters();
+            }
             
+            // Catch exception and print error
+            catch(const std::exception &e) {
+                std::cerr << e.what() << std::endl;
+            }
         }
 
-        // Catch exception and print error
-        catch(const std::exception &e) {
-            std::cerr << e.what() << std::endl;
-        }
     }
 
     return 0;
