@@ -13,6 +13,7 @@
 #include "stack.h"
 #include "../parser/syntax.h"
 #include <iostream>
+#include <bitset>
 
 namespace vm {
   class Emulator {
@@ -20,6 +21,7 @@ namespace vm {
       Heap heap;
       Stack stack;
       uint32_t registers[15];
+      bool cpsr[4];
       std::vector<syntax::Node*> program;
 
       void executeBiOperand(syntax::BiOperandNode*);
@@ -27,7 +29,8 @@ namespace vm {
       bool checkCondition(syntax::CONDITION);
       uint32_t deflex(syntax::FlexOperand);
       uint32_t applyShift(syntax::SHIFT, int, int);
-      void setFlags(int value);
+      void setFlags(uint32_t, uint32_t, uint64_t, char);
+      // std::pair<int, int> computeSigns(uint32_t, uint32_t);
 
 
     public:

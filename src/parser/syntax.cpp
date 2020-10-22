@@ -97,11 +97,11 @@ uint32_t Node::parseImmediate(lexer::Token token, unsigned int bits, unsigned in
   uint64_t imm = parseImmediate(token); 
   if (imm == 0) return imm;                                   // return 0 if imm == 0 (short circuit)
 
-  std::cout << std::bitset<64>(imm) << std::endl;
+  // std::cout << std::bitset<64>(imm) << std::endl;
 
   int bottombit = ffs(imm) - 1;
   int topbit = (int)std::log2(imm);
-  std::cout << bottombit << ", " << topbit << std::endl;
+  // std::cout << bottombit << ", " << topbit << std::endl;
   if (topbit > 31)
     throw NumericalError("IMMEDIATE value '" + token.value() + "' (decimal " + std::to_string(imm) + ") cannot be represented in 32 bits.", statement, token.tokenNumber());
   if ((topbit - bottombit) > --bits)
@@ -346,8 +346,11 @@ std::variant<std::monostate, REGISTER, int> FlexOperand::parseRegOrImm(unsigned 
   if (flex.index() == 0) {
     try { 
       unsigned int immShift = 0;
-      flex = parseImmediate(peekToken(), immBits, immShift);      // attempt to parse as immediate by peeking at the next token
-      this->_immShift = immShift;
+      if (immBits == 8) {
+        flex = parseImmediate(peekToken(), immBits, immShift);    // attempt to parse as immediate by peeking at the next token
+        this->_immShift = immShift;
+      }
+      else flex = parseImmediate(peekToken(), immBits);
     }                                                           
     catch(SyntaxError e) {  }                                     // catch and carry on if syntax error (fail on numerical error)
   }
