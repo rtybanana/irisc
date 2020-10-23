@@ -341,7 +341,7 @@ void FlexOperand::parseShift() {
   this->_Rs = parseRegOrImm(5);     // parse immediate with a max length of 5 bits
 }
 
-std::variant<std::monostate, REGISTER, int> FlexOperand::parseRegOrImm(unsigned int immBits = 8) {
+std::variant<std::monostate, REGISTER, int> FlexOperand::parseRegOrImm(unsigned int immBits) {
   std::variant<std::monostate, REGISTER, int> flex;
   try { flex = parseRegister(peekToken()); }                      // attempt to parse as register by peeking at the next token
   catch(SyntaxError e) {  }                                       // catch and carry on if syntax error
