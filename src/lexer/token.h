@@ -52,12 +52,11 @@ namespace lexer {
 
     std::map<std::string, TOKEN> operations {
       // bi-operand instructions
-      {"mov", BI_OPERAND}, {"tst", BI_OPERAND}, {"teq", BI_OPERAND}, {"cmp", BI_OPERAND}, {"cmn", BI_OPERAND},
+      {"mov", BI_OPERAND}, {"mvn", BI_OPERAND}, {"tst", BI_OPERAND}, {"teq", BI_OPERAND}, {"cmp", BI_OPERAND}, {"cmn", BI_OPERAND},
 
       // tri-operand instructions
       {"and", TRI_OPERAND}, {"eor", TRI_OPERAND}, {"sub", TRI_OPERAND}, {"rsb", TRI_OPERAND}, {"add", TRI_OPERAND}, 
       {"adc", TRI_OPERAND}, {"sbc", TRI_OPERAND}, {"rsc", TRI_OPERAND}, {"orr", TRI_OPERAND}, {"bic", TRI_OPERAND}, 
-      {"mvn", TRI_OPERAND},
 
       // shift instructions
       {"lsl", SHIFT}, {"lsr", SHIFT}, {"asr", SHIFT}, {"ror", SHIFT},

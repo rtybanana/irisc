@@ -57,15 +57,6 @@ uint32_t Emulator::applyShift(syntax::SHIFT shift, int value, int amount) {
   }
 }
 
-// /**
-//  * 
-//  */
-// std::pair<int, int> Emulator::computeSigns(uint32_t op1, uint32_t op2) {
-//   int sign1 = std::bitset<32>(op1)[31];
-//   int sign2 = std::bitset<32>(op2)[31];
-//   return {sign1, sign2};
-// }
-
 /** TODO: implement
  * Sets the CPSR flags based on the result of the executing instruction
  */
@@ -80,50 +71,46 @@ void Emulator::setFlags(uint32_t op1, uint32_t op2, uint64_t result, char _opera
   std::cout << "\n" << "sign1: " << sign1 << ", sign2: " << sign2 << ", signr: " << signr << ", operator: " << _operator << std::endl;
   std::cout << result_ext[32] << " " << std::bitset<32>(result) << std::endl;
 
-  cpsr[0] = result_ext[31] == 1;      // msb = 1
-  cpsr[1] = (uint32_t)result == 0;    // all bits = 0
+  cpsr[0] = result_ext[31] == 1;                      // msb = 1
+  cpsr[1] = (uint32_t)result == 0;                    // all bits = 0
+  cpsr[2] = result_ext[32];                           // unsigned overflow
 
-  if (_operator == '+') {
-    cpsr[3] = sign1 == sign2 && sign1 != signr;       // two operands of the same sign result in changed sign
-  }
-  else if (_operator == '-') {
-    cpsr[3] = sign1 != sign2 && sign2 == signr;       // result sign same as subtrahend
-  }
-  else {
-
-  }
+  if (_operator == '+') cpsr[3] = sign1 == sign2 && sign1 != signr;         // two operands of the same sign result in changed sign
+  else if (_operator == '-') cpsr[3] = sign1 != sign2 && sign2 == signr;    // signs different and result sign same as subtrahend
   
   std::cout << "  negative flag: " << cpsr[0] << "\n"
             << "  zero flag: " << cpsr[1] << "\n"
+            << "  carry flag: " << cpsr[2] << "\n"
             << "  overflow flag: " << cpsr[3] << std::endl;
 
   return;                                        
 }
 
 void Emulator::executeBiOperand(syntax::BiOperandNode* instruction) {
-  auto [op, cond, set, dest, flex] = instruction->unpack();         // unpack the instruction
-  if (!checkCondition(cond)) return;                                // returns early if condition code is not satisfied
+  auto [op, cond, set, dest, flex] = instruction->unpack();           // unpack the instruction
+  if (!checkCondition(cond)) return;                                  // returns early if condition code is not satisfied
 
-  uint32_t src = deflex(flex);                                      // deflex the flex operand into a single value
-  switch(op) {                                                      // check opcode and execute instruction
+  uint32_t src = deflex(flex);                                        // deflex the flex operand into a single value
+  switch(op) {                                                        // check opcode and execute instruction
     case syntax::MOV:
-      // if (set) setFlags(registers[dest]);
+      if (set) setFlags(registers[dest], src, src);
       registers[dest] = src;
+      break;
+    case syntax::MVN:
+      if (set) setFlags(registers[dest], -src, -src);
+      registers[dest] = -src;
       break;
     case syntax::CMP:
       setFlags(registers[dest], src, (uint64_t)registers[dest] - src, '-');
       break;
     case syntax::CMN:
       setFlags(registers[dest], src, (uint64_t)registers[dest] + src, '+');
-      // setFlags(registers[dest] - (- src), signs);
       break;
     case syntax::TST:
       setFlags(registers[dest], src, (uint64_t)registers[dest] & src);
-      // setFlags(registers[dest] & src, signs);
       break;
     case syntax::TEQ:
       setFlags(registers[dest], src, (uint64_t)registers[dest] ^ src);
-      // setFlags(registers[dest] ^ src, signs);
       break;
   } 
 }
@@ -138,18 +125,17 @@ void Emulator::executeTriOperand(syntax::TriOperandNode* instruction) {
   int result;
   switch(op) {                                                      // check opcode and execute instruction
     case syntax::ADD:
-      if (set) setFlags(n, m, (uint64_t)n + (uint64_t)m, '+');
+      if (set) setFlags(n, m, (uint64_t)n + m, '+');
       result = n + m;
       break;
     case syntax::SUB:
-      if (set) setFlags(n, m, (uint64_t)n - (uint64_t)m, '-');
+      if (set) setFlags(n, m, (uint64_t)n - m, '-');
       result = n - m;
       break;
     case syntax::RSB:
-      if (set) setFlags(m, n, (uint64_t)m - (uint64_t)n, '-');
+      if (set) setFlags(m, n, (uint64_t)m - n, '-');
       result = m - n;
   } 
 
   registers[dest] = result;
-  // if (set) setFlags(registers[dest], );
 }
