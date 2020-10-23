@@ -187,6 +187,9 @@ BiOperandNode::BiOperandNode(std::vector<lexer::Token> statement) : InstructionN
   this->_flex = FlexOperand(statement, currentToken);          // parsing delegated to FlexOperand
 }
 
+/**
+ * Assembles this instruction into the proper machine code that would execute it on an ARM device.
+ */
 unsigned int BiOperandNode::assemble() {
   unsigned int instruction = 0;
   std::cout << "assembling..." << std::endl;
@@ -267,8 +270,8 @@ TriOperandNode::TriOperandNode(std::vector<lexer::Token> statement) : Instructio
   parseComma(nextToken());
   this->_Rn = parseRegister(nextToken());
 
-  peekToken();                                              // peek next token to see if it exists
-  this->_flex = FlexOperand(statement, currentToken);          // parsing delegated to FlexOperand
+  peekToken();                                                  // peek next token to see if it exists
+  this->_flex = FlexOperand(statement, currentToken);           // parsing delegated to FlexOperand
 }
 
 unsigned int TriOperandNode::assemble() {
@@ -299,7 +302,7 @@ std::variant<std::monostate, REGISTER, int> ShiftNode::parseRegOrImm() {
   catch(SyntaxError e) {  }                                 // catch and carry on if syntax error
   
   if (flex.index() == 0) {
-    try { flex = parseImmediate(peekToken(), 5); }             // attempt to parse as immediate by peeking at the next token
+    try { flex = parseImmediate(peekToken(), 5); }          // attempt to parse as immediate by peeking at the next token
     catch(SyntaxError e) {  }                               // catch and carry on if syntax error (fail on numerical error)
   }
 
@@ -338,7 +341,7 @@ void FlexOperand::parseShift() {
   this->_Rs = parseRegOrImm(5);     // parse immediate with a max length of 5 bits
 }
 
-std::variant<std::monostate, REGISTER, int> FlexOperand::parseRegOrImm(unsigned int immBits) {
+std::variant<std::monostate, REGISTER, int> FlexOperand::parseRegOrImm(unsigned int immBits = 8) {
   std::variant<std::monostate, REGISTER, int> flex;
   try { flex = parseRegister(peekToken()); }                      // attempt to parse as register by peeking at the next token
   catch(SyntaxError e) {  }                                       // catch and carry on if syntax error
