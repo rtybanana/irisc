@@ -67,7 +67,7 @@ uint32_t Emulator::applyShift(syntax::SHIFT shift, int value, int amount) {
 // }
 
 /** TODO: implement
- * Checks the CPSR flags against the current condition code to determine if the instruction should be executed
+ * Sets the CPSR flags based on the result of the executing instruction
  */
 void Emulator::setFlags(uint32_t op1, uint32_t op2, uint64_t result, char _operator = ' ') {
   int sign1 = std::bitset<32>(op1)[31];               // sign of left hand operand
