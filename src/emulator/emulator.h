@@ -26,12 +26,11 @@ namespace vm {
 
       void executeBiOperand(syntax::BiOperandNode*);
       void executeTriOperand(syntax::TriOperandNode*);
+      void executeShift(syntax::ShiftNode*);
       bool checkCondition(syntax::CONDITION);
       uint32_t deflex(syntax::FlexOperand);
-      uint32_t applyShift(syntax::SHIFT, int, int);
+      uint32_t applyFlexShift(syntax::SHIFT, int, int);
       void setFlags(uint32_t, uint32_t, uint64_t, char);
-      // std::pair<int, int> computeSigns(uint32_t, uint32_t);
-
 
     public:
       Emulator();

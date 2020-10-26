@@ -5,6 +5,9 @@ using namespace vm;
 
 Emulator::Emulator() : heap(), stack(), registers {0} {};
 
+/**
+ * Driver function to execute any instruction with a base class of InstructionNode
+ */
 void Emulator::execute(syntax::InstructionNode* base) {
   if (dynamic_cast<syntax::BiOperandNode*>(base)) {
     return executeBiOperand(dynamic_cast<syntax::BiOperandNode*>(base));
@@ -12,13 +15,39 @@ void Emulator::execute(syntax::InstructionNode* base) {
   if (dynamic_cast<syntax::TriOperandNode*>(base)) {
     return executeTriOperand(dynamic_cast<syntax::TriOperandNode*>(base));
   }
+  if (dynamic_cast<syntax::ShiftNode*>(base)) {
+    return executeShift(dynamic_cast<syntax::ShiftNode*>(base));
+  }
 }
 
-/** TODO: implement
+/** TODO: check that each of these works as expected
  * Checks the CPSR flags against the current condition code to determine if the instruction should be executed
  */
-bool Emulator::checkCondition(syntax::CONDITION) {
-  return true;                                        
+bool Emulator::checkCondition(syntax::CONDITION cond) {
+  std::bitset<4> bits(cond);
+
+  bool result;
+  switch(cond) {
+    case syntax::EQ: case syntax::NE:                       // equality
+      result = cpsr[1]; break;
+    case syntax::CS: case syntax::CC:
+      result = cpsr[2]; break;
+    case syntax::MI: case syntax::PL:
+      result = cpsr[0]; break;
+    case syntax::VS: case syntax::VC:
+      result = cpsr[3]; break;
+    case syntax::HI: case syntax::LS:
+      result = cpsr[2] && !cpsr[1]; break;
+    case syntax::GE: case syntax::LT:
+      result = cpsr[0] == cpsr[3]; break;
+    case syntax::GT: case syntax::LE:
+      result = (cpsr[0] == cpsr[3]) && !cpsr[1]; break;
+    default:
+      return true;                                          // AL flag returns true regardless
+  }
+
+  if (bits[0] == 1) result = !result;
+  return result;                                        
 }
 
 /**
@@ -36,7 +65,7 @@ uint32_t Emulator::deflex(syntax::FlexOperand flex) {
     if (flex.shiftedByImm()) shiftBy = std::get<int>(flex.Rs());                  // get value of immediate shift
     else shiftBy = registers[std::get<syntax::REGISTER>(flex.Rs())];              // get value in shift register
 
-    deflex = applyShift(flex.shift(), deflex, shiftBy);                           // apply the unpacked shift
+    deflex = applyFlexShift(flex.shift(), deflex, shiftBy);                           // apply the unpacked shift
   }
   
   return deflex;
@@ -45,7 +74,7 @@ uint32_t Emulator::deflex(syntax::FlexOperand flex) {
 /**
  * Applies a single shift operation.
  */
-uint32_t Emulator::applyShift(syntax::SHIFT shift, int value, int amount) {
+uint32_t Emulator::applyFlexShift(syntax::SHIFT shift, int value, int amount) {
   switch(shift) {
     case syntax::LSL:
       return value <<= amount;
@@ -57,16 +86,16 @@ uint32_t Emulator::applyShift(syntax::SHIFT shift, int value, int amount) {
   }
 }
 
-/** TODO: implement
+/** TODO: check the logic for setting the carry bit
  * Sets the CPSR flags based on the result of the executing instruction
  */
 void Emulator::setFlags(uint32_t op1, uint32_t op2, uint64_t result, char _operator = ' ') {
   int sign1 = std::bitset<32>(op1)[31];               // sign of left hand operand
   int sign2 = std::bitset<32>(op2)[31];               // sign of right hand operand
   int signr = std::bitset<32>(result)[31];            // sign of result
-  std::bitset<33> result_ext(result);
+  std::bitset<33> result_ext(result);                 // msb = carry bit
 
-  std::cout << std::bitset<33>(result) << std::endl;
+  // std::cout << std::bitset<33>(result) << std::endl;
 
   std::cout << "\n" << "sign1: " << sign1 << ", sign2: " << sign2 << ", signr: " << signr << ", operator: " << _operator << std::endl;
   std::cout << result_ext[32] << " " << std::bitset<32>(result) << std::endl;
@@ -86,6 +115,9 @@ void Emulator::setFlags(uint32_t op1, uint32_t op2, uint64_t result, char _opera
   return;                                        
 }
 
+/**
+ * Executes any bi-operand instruction such as MOV, MVN and comparisions CMP, TST etc
+ */
 void Emulator::executeBiOperand(syntax::BiOperandNode* instruction) {
   auto [op, cond, set, dest, flex] = instruction->unpack();           // unpack the instruction
   if (!checkCondition(cond)) return;                                  // returns early if condition code is not satisfied
@@ -115,15 +147,30 @@ void Emulator::executeBiOperand(syntax::BiOperandNode* instruction) {
   } 
 }
 
+/**
+ * TODO: implement arithmetic with carry (ADC SBC and RSC)
+ * Executes any tri-operand arithmetic opereration (besides shifts)
+ */
 void Emulator::executeTriOperand(syntax::TriOperandNode* instruction) {
   auto [op, cond, set, dest, src, flex] = instruction->unpack();    // unpack the instruction
   if (!checkCondition(cond)) return;                                // returns early if condition code is not satisfied
 
-  uint32_t m = deflex(flex);                                             // deflex the flex operand into a value
   uint32_t n = registers[src];
-
+  uint32_t m = deflex(flex);                                             // deflex the flex operand into a value
   int result;
   switch(op) {                                                      // check opcode and execute instruction
+    case syntax::AND:
+      if (set) setFlags(n, m, (uint64_t)n & m);
+      result = n & m;
+      break;
+    case syntax::EOR:
+      if (set) setFlags(n, m, (uint64_t)n ^ m);
+      result = n ^ m;
+      break;
+    case syntax::ORR:
+      if (set) setFlags(n, m, (uint64_t)n | m);
+      result = n | m;
+      break;
     case syntax::ADD:
       if (set) setFlags(n, m, (uint64_t)n + m, '+');
       result = n + m;
@@ -136,6 +183,38 @@ void Emulator::executeTriOperand(syntax::TriOperandNode* instruction) {
       if (set) setFlags(m, n, (uint64_t)m - n, '-');
       result = m - n;
   } 
+
+  registers[dest] = result;
+}
+
+/**
+ * TODO: implement ASR and ROR
+ * Executes a shift operation
+ */ 
+void Emulator::executeShift(syntax::ShiftNode* instruction) {
+  auto [op, cond, set, dest, src1, src2] = instruction->unpack();     // unpack the instruction
+  if (!checkCondition(cond)) return;                                  // returns early if condition code is not satisfied
+
+  uint32_t n = registers[src1];
+  uint32_t m;
+  if (src2.index() == 1) m = registers[std::get<int>(src2)];
+  else m = std::get<int>(src2);
+
+  int result;
+  switch(op) {                                                        // check opcode and execute instruction
+    case syntax::LSL:
+      if (set) setFlags(n, m, n << m);
+      result = n << m;
+      break;
+    case syntax::LSR:
+      if (set) setFlags(n, m, n >> m);
+      result = n >> m;
+      break;
+    case syntax::ASR:
+    case syntax::ROR:
+    default:
+      break;
+  }
 
   registers[dest] = result;
 }
