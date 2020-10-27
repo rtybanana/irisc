@@ -17,7 +17,9 @@ namespace vm {
 
     public:
       Heap() {};
+      void close();
       bool allocate();
+      void reset();
   };
 }
 

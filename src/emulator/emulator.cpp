@@ -3,21 +3,29 @@
 
 using namespace vm;
 
-Emulator::Emulator() : heap(), stack(), registers {0} {};
+Emulator::Emulator() : heap(), stack(), registers() {};
+
+void Emulator::reset() {
+  registers.reset();
+  // stack.reset();
+  // heap.reset();
+}
 
 /**
  * Driver function to execute any instruction with a base class of InstructionNode
  */
 void Emulator::execute(syntax::InstructionNode* base) {
   if (dynamic_cast<syntax::BiOperandNode*>(base)) {
-    return executeBiOperand(dynamic_cast<syntax::BiOperandNode*>(base));
+    executeBiOperand(dynamic_cast<syntax::BiOperandNode*>(base));
   }
-  if (dynamic_cast<syntax::TriOperandNode*>(base)) {
-    return executeTriOperand(dynamic_cast<syntax::TriOperandNode*>(base));
+  else if (dynamic_cast<syntax::TriOperandNode*>(base)) {
+    executeTriOperand(dynamic_cast<syntax::TriOperandNode*>(base));
   }
-  if (dynamic_cast<syntax::ShiftNode*>(base)) {
-    return executeShift(dynamic_cast<syntax::ShiftNode*>(base));
+  else if (dynamic_cast<syntax::ShiftNode*>(base)) {
+    executeShift(dynamic_cast<syntax::ShiftNode*>(base));
   }
+
+  // registers.update();
 }
 
 /** TODO: check that each of these works as expected

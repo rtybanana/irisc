@@ -11,6 +11,7 @@
 
 #include "heap.h"
 #include "stack.h"
+#include "registers.h"
 #include "../parser/syntax.h"
 #include <iostream>
 #include <bitset>
@@ -20,7 +21,8 @@ namespace vm {
     private:
       Heap heap;
       Stack stack;
-      uint32_t registers[15];
+      // uint32_t registers[15];
+      Registers registers;
       bool cpsr[4];
       std::vector<syntax::Node*> program;
 
@@ -34,10 +36,11 @@ namespace vm {
 
     public:
       Emulator();
+      void reset();
       void calculateLabelOffsets();
       void execute(syntax::InstructionNode*);
       void execute(std::vector<syntax::Node*>);
-      void printRegisters() const { for (auto x = std::begin(registers); x != std::end(registers);){std::cout <<*x++<< ' ';} std::cout << std::endl; };   // fishbone operator
+      void printRegisters() const { registers.printRegisters(); };   // fishbone operator
   };
 }
 

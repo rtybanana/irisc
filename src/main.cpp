@@ -1,8 +1,9 @@
 #include <iostream>
-// #include <ncurses.h>
+#include <thread>
 #include <fstream>
 #include <regex>
 #include <iomanip>
+#include <FL/Fl.H>
 
 #include "emulator/emulator.h"
 #include "lexer/lexer.h"
@@ -10,36 +11,15 @@
 #include "parser/parser.h"
 #include "parser/syntax.h"
 
-int main() {
-    vm::Emulator emulator;
+
+void repl(vm::Emulator emulator) {
 
     // Greeting
     std::cout << "\033[3m" << "i" << "\033[0m" << "\033[1m" << "RISC"  << "\033[0m " << "0.0.1" << std::endl;
     std::cout << "Type \":h\" for more information." << std::endl;
 
-    // int k = 0;
     // indefinite prompt for user input
     for(;;){
-
-        // k = 0;
-
-        // switch((k=getch())) {
-        // case KEY_UP:
-        //     std::cout << "Up" << std::endl;//key up
-        //     break;
-        // case KEY_DOWN:
-        //     std::cout << "Down" << std::endl;   // key down
-        //     break;
-        // case KEY_LEFT:
-        //     std::cout << "Left" << std::endl;  // key left
-        //     break;
-        // case KEY_RIGHT:
-        //     std::cout << "Right" << std::endl;  // key right
-        //     break;
-        // default:
-        //     std::cout << "null" << std::endl;  // not arrow
-        //     break;
-        // }
 
         // variables for user input
         std::string input_line;
@@ -57,8 +37,12 @@ int main() {
         if (input_line == "") continue;
 
         // quit command
-        if(input_line == ":q"){
+        if (input_line == ":q"){
             break;
+        }
+
+        if (input_line == ":r" || input_line == ":reset") {
+            emulator.reset();
         }
 
         // help command
@@ -102,8 +86,29 @@ int main() {
                 std::cerr << e.what() << std::endl;
             }
         }
-
     }
+
+    Fl::awake(new int(0));
+}
+
+int main() {
+    Fl::lock();
+    vm::Emulator emulator;
+    std::thread repl_t(repl, emulator);
+
+    while (true) {
+        Fl::wait();
+        if (Fl::thread_message()) {
+            repl_t.detach();
+            repl_t.~thread();
+            break;
+        }
+    }
+
+    if (repl_t.joinable()) repl_t.join();
+
+    // final cleanup
+    while(Fl::first_window()) delete Fl::first_window();
 
     return 0;
 }
