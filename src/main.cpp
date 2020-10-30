@@ -76,7 +76,7 @@ void repl(vm::Emulator emulator) {
                 lexer::Lexer lexer(input_line);
                 parser::Parser parser(lexer);
                 syntax::InstructionNode* node = parser.parseSingle();
-                unsigned int instruction = node->assemble();
+                auto [instruction, explanation] = node->assemble();
                 emulator.execute(node);
                 emulator.printRegisters();
             }

@@ -1,23 +1,8 @@
-#include "emulator.h"
+#include "registers.h"
 #include <FL/Fl.H>
 #include <FL/Fl_Box.H>
-#include <FL/fl_ask.H>
 
 using namespace vm;
-
-static void window_cb(Fl_Widget *widget, void *) {
-  Fl_Window *window = (Fl_Window*)widget;
-
-  // fl_choice presents a modal dialog window with up to three choices.
-    int result = fl_choice("Are you sure you want to exit?", 
-                           "Yes",       // 0
-                           "No",        // 1
-                           0);
-    if (result == 0) {  // Close without saving
-      // window->hide();
-      Fl::awake(new int(0));
-    }
-}
 
 Registers::Registers() : _registers {} {
   for (int i = 0; i < _registers.size(); i++) _registers[i] = proxy(this, i);
@@ -25,7 +10,7 @@ Registers::Registers() : _registers {} {
   Fl::lock();
     window = new Fl_Window(220,500,"Registers");
     for(auto const& [name, index] : syntax::regMap){
-      Fl_Box *reg = new Fl_Box(10, 10+(30*index), 30, 30, name.c_str());
+      Fl_Box* reg = new Fl_Box(10, 10+(30*index), 30, 30, name.c_str());
       reg->box(FL_UP_BOX);
       reg->labelfont(FL_BOLD);
       reg->labelsize(12);
@@ -41,7 +26,7 @@ Registers::Registers() : _registers {} {
     }
 
     window->end();
-    window->callback(window_cb);
+    window->callback(gui::close_cb);
     window->show();
   Fl::unlock();
 

@@ -3,7 +3,7 @@
 
 using namespace vm;
 
-Emulator::Emulator() : heap(), stack(), registers() {};
+Emulator::Emulator() : heap(), stack(), registers(), instruction(), cpsr {0} {};
 
 void Emulator::reset() {
   registers.reset();
@@ -15,17 +15,18 @@ void Emulator::reset() {
  * Driver function to execute any instruction with a base class of InstructionNode
  */
 void Emulator::execute(syntax::InstructionNode* base) {
+  bool executed = false;
   if (dynamic_cast<syntax::BiOperandNode*>(base)) {
-    executeBiOperand(dynamic_cast<syntax::BiOperandNode*>(base));
+    executed = executeBiOperand(dynamic_cast<syntax::BiOperandNode*>(base));
   }
   else if (dynamic_cast<syntax::TriOperandNode*>(base)) {
-    executeTriOperand(dynamic_cast<syntax::TriOperandNode*>(base));
+    executed = executeTriOperand(dynamic_cast<syntax::TriOperandNode*>(base));
   }
   else if (dynamic_cast<syntax::ShiftNode*>(base)) {
-    executeShift(dynamic_cast<syntax::ShiftNode*>(base));
+    executed = executeShift(dynamic_cast<syntax::ShiftNode*>(base));
   }
 
-  // registers.update();
+  instruction.set(base, executed);
 }
 
 /** TODO: check that each of these works as expected
@@ -126,9 +127,9 @@ void Emulator::setFlags(uint32_t op1, uint32_t op2, uint64_t result, char _opera
 /**
  * Executes any bi-operand instruction such as MOV, MVN and comparisions CMP, TST etc
  */
-void Emulator::executeBiOperand(syntax::BiOperandNode* instruction) {
+bool Emulator::executeBiOperand(syntax::BiOperandNode* instruction) {
   auto [op, cond, set, dest, flex] = instruction->unpack();           // unpack the instruction
-  if (!checkCondition(cond)) return;                                  // returns early if condition code is not satisfied
+  if (!checkCondition(cond)) return false;                            // returns early if condition code is not satisfied
 
   uint32_t src = deflex(flex);                                        // deflex the flex operand into a single value
   switch(op) {                                                        // check opcode and execute instruction
@@ -153,18 +154,20 @@ void Emulator::executeBiOperand(syntax::BiOperandNode* instruction) {
       setFlags(registers[dest], src, (uint64_t)registers[dest] ^ src);
       break;
   } 
+
+  return true;
 }
 
 /**
  * TODO: implement arithmetic with carry (ADC SBC and RSC)
  * Executes any tri-operand arithmetic opereration (besides shifts)
  */
-void Emulator::executeTriOperand(syntax::TriOperandNode* instruction) {
+bool Emulator::executeTriOperand(syntax::TriOperandNode* instruction) {
   auto [op, cond, set, dest, src, flex] = instruction->unpack();    // unpack the instruction
-  if (!checkCondition(cond)) return;                                // returns early if condition code is not satisfied
+  if (!checkCondition(cond)) return false;                          // returns early if condition code is not satisfied
 
   uint32_t n = registers[src];
-  uint32_t m = deflex(flex);                                             // deflex the flex operand into a value
+  uint32_t m = deflex(flex);                                        // deflex the flex operand into a value
   int result;
   switch(op) {                                                      // check opcode and execute instruction
     case syntax::AND:
@@ -193,15 +196,16 @@ void Emulator::executeTriOperand(syntax::TriOperandNode* instruction) {
   } 
 
   registers[dest] = result;
+  return true;
 }
 
 /**
  * TODO: implement ASR and ROR
  * Executes a shift operation
  */ 
-void Emulator::executeShift(syntax::ShiftNode* instruction) {
+bool Emulator::executeShift(syntax::ShiftNode* instruction) {
   auto [op, cond, set, dest, src1, src2] = instruction->unpack();     // unpack the instruction
-  if (!checkCondition(cond)) return;                                  // returns early if condition code is not satisfied
+  if (!checkCondition(cond)) return false;                            // returns early if condition code is not satisfied
 
   uint32_t n = registers[src1];
   uint32_t m;
@@ -225,4 +229,5 @@ void Emulator::executeShift(syntax::ShiftNode* instruction) {
   }
 
   registers[dest] = result;
+  return true;
 }

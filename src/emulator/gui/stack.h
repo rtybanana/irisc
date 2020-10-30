@@ -1,6 +1,7 @@
 /**
  * @file stack.h
- * Helper class to emulate the stack in an ARMv7 computer.
+ * Helper class to emulate the stack in an ARMv7 computer. Responsible for handling pushing and popping
+ * to/from the stack and managing the related GUI window.
  * @author Rory Pinkney
  * @date 8/10/20
  */

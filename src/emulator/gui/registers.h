@@ -1,15 +1,16 @@
 /**
- * @file emulator.h
- * Declares the main class of the ARMv7 virtual machine which contains a stack, heap and a set of registers.
- * Parsed instructions are executed here.
+ * @file registers.h
+ * Emulates the registers in an ARMv7 processor. Responsible for managing the getting and setting of 
+ * register values and displaying the related GUI window.
  * @author Rory Pinkney
- * @date 8/10/20
+ * @date 20/10/20
  */
 
 #ifndef IRISC_REGISTERS_H
 #define IRISC_REGISTERS_H
 
-#include "../parser/syntax.h"
+#include "../../parser/syntax.h"
+#include "gui.h"
 #include <sstream>
 #include <iostream>
 #include <iomanip>
@@ -18,7 +19,7 @@
 #include <FL/Fl_Box.H>
 
 namespace vm {
-  class Registers {
+  class Registers : gui::Window {
     private:
 
       class proxy {

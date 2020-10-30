@@ -9,9 +9,10 @@
 #ifndef IRISC_EMULATOR_H
 #define IRISC_EMULATOR_H
 
-#include "heap.h"
-#include "stack.h"
-#include "registers.h"
+#include "gui/heap.h"
+#include "gui/stack.h"
+#include "gui/registers.h"
+#include "gui/instruction.h"
 #include "../parser/syntax.h"
 #include <iostream>
 #include <bitset>
@@ -21,14 +22,14 @@ namespace vm {
     private:
       Heap heap;
       Stack stack;
-      // uint32_t registers[15];
       Registers registers;
+      Instruction instruction;
       bool cpsr[4];
       std::vector<syntax::Node*> program;
 
-      void executeBiOperand(syntax::BiOperandNode*);
-      void executeTriOperand(syntax::TriOperandNode*);
-      void executeShift(syntax::ShiftNode*);
+      bool executeBiOperand(syntax::BiOperandNode*);
+      bool executeTriOperand(syntax::TriOperandNode*);
+      bool executeShift(syntax::ShiftNode*);
       bool checkCondition(syntax::CONDITION);
       uint32_t deflex(syntax::FlexOperand);
       uint32_t applyFlexShift(syntax::SHIFT, int, int);

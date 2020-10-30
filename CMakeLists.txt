@@ -23,14 +23,20 @@ add_executable(
   src/parser/parser.h
   src/parser/syntax.cpp
   src/parser/syntax.h
+  src/parser/constants.h
   src/emulator/emulator.cpp
   src/emulator/emulator.h
-  src/emulator/registers.cpp
-  src/emulator/registers.h
-  src/emulator/stack.cpp
-  src/emulator/stack.h
-  src/emulator/heap.cpp
-  src/emulator/heap.h
+  src/emulator/gui/registers.cpp
+  src/emulator/gui/registers.h
+  src/emulator/gui/stack.cpp
+  src/emulator/gui/stack.h
+  src/emulator/gui/heap.cpp
+  src/emulator/gui/heap.h
+  src/emulator/gui/instruction.cpp
+  src/emulator/gui/instruction.h
+  src/emulator/gui/gui.h
+  src/emulator/gui/widgets/hoverbox.cpp
+  src/emulator/gui/widgets/hoverbox.h
 )
 
 TARGET_LINK_LIBRARIES(iRISC ${FLTK_LIBRARIES})
