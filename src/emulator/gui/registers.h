@@ -54,7 +54,8 @@ namespace vm {
       Registers();
       void update();
       void updateReg(int, uint32_t);
-      void reset();
+      void prepare();
+      void clear();
       void printRegisters() const { for (auto x = std::begin(_registers); x != std::end(_registers);){std::cout <<*x++<< ' ';} std::cout << std::endl; };   // fishbone operator
       proxy& operator[] (int index) { return _registers[index]; };
   };

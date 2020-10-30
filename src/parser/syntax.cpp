@@ -266,7 +266,6 @@ std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, int>>> BiO
   }
   else throw AssemblyError("Source operand Rm is neither a REGISTER nor IMMEDIATE value. This is most likely a parser bug.", statement);
 
-  std::cout << std::bitset<32>(instruction) << std::endl;
   return {instruction, explanation};
 }
 
@@ -356,7 +355,6 @@ std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, int>>> Tri
   }
   else throw AssemblyError("Source operand Rm is neither a REGISTER nor IMMEDIATE value. This is most likely a parser bug.", statement);
 
-  std::cout << std::bitset<32>(instruction) << std::endl;
   return {instruction, explanation};
 }
 

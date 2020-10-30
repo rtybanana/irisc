@@ -30,7 +30,7 @@ namespace widgets {
       std::string detail() const { return _detail; };
       bool hovering() const { return _hovering; };
       int handle(int) override;
-      // void highlight(Fl_Color);
+      void highlight(Fl_Color color = 0);
   };
 }
 

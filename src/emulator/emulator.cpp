@@ -6,7 +6,7 @@ using namespace vm;
 Emulator::Emulator() : heap(), stack(), registers(), instruction(), cpsr {0} {};
 
 void Emulator::reset() {
-  registers.reset();
+  registers.clear();
   // stack.reset();
   // heap.reset();
 }
@@ -15,6 +15,8 @@ void Emulator::reset() {
  * Driver function to execute any instruction with a base class of InstructionNode
  */
 void Emulator::execute(syntax::InstructionNode* base) {
+  registers.prepare();
+
   bool executed = false;
   if (dynamic_cast<syntax::BiOperandNode*>(base)) {
     executed = executeBiOperand(dynamic_cast<syntax::BiOperandNode*>(base));

@@ -35,19 +35,31 @@ Registers::Registers() : _registers {} {
 
 void Registers::updateReg(int index, uint32_t value) {
   Fl::lock();
-    for (int i = 0; i < labels.size(); i++) {
-      labels[i]->color(FL_BACKGROUND_COLOR);
-      labels[i]->redraw();
-    }
+    // for (int i = 0; i < labels.size(); i++) {
+    //   labels[i]->color(FL_BACKGROUND_COLOR);
+    //   labels[i]->redraw();
+    // }
     
     labels[index]->copy_label(regstr(value).c_str());
     labels[index]->color(FL_YELLOW);
+    labels[index]->redraw();
   Fl::unlock();
 
   Fl::awake();
 }
 
-void Registers::reset() {
+void Registers::prepare() {
+  Fl::lock();
+    for (int i = 0; i < _registers.size(); i++) {
+      labels[i]->color(FL_BACKGROUND_COLOR);
+      labels[i]->redraw();
+    }
+  Fl::unlock();
+
+  Fl::awake();
+}
+
+void Registers::clear() {
   Fl::lock();
     for (int i = 0; i < _registers.size(); i++) {
       _registers[i] = proxy(this, i);
