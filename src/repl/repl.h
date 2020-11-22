@@ -17,14 +17,16 @@ namespace irepl {
       std::vector<std::string> ops;
       std::vector<std::string> regs;
       std::vector<std::string> conds;
+      std::vector<std::pair<std::string, replxx::Replxx::Color>> highlights;
       void fetchTokens();
+      void fetchHighlights();
     
     public:
       REPL(replxx::Replxx&);
       void loop(vm::Emulator);
       replxx::Replxx::completions_t hook_completion(std::string const& context, int& contextLen);
       replxx::Replxx::hints_t hook_hint(std::string const& context, int& contextLen, replxx::Replxx::Color& color);
-      void hook_color(std::string const& str, replxx::Replxx::colors_t& colors, std::vector<std::pair<std::string, replxx::Replxx::Color>> const& user_data);
+      void hook_color(std::string const& str, replxx::Replxx::colors_t& colors);
       replxx::Replxx::ACTION_RESULT message(replxx::Replxx&, std::string, char32_t);
   };
 }

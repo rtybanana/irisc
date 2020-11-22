@@ -25,7 +25,7 @@ namespace vm {
   };
 
   static std::map<FLAG, std::string> flagTitle {
-    {N, "Negative Flag"}, {Z, "Zero Flag"}, {C, "Carry Flag"}, {V, "Overflow Flag"}
+    {N, "Negative Flag (N)"}, {Z, "Zero Flag (Z)"}, {C, "Carry Flag (C)"}, {V, "Overflow Flag (V)"}
   };
 
   static std::map<FLAG, std::string> flagExplain {

@@ -21,29 +21,7 @@
 using Replxx = replxx::Replxx;
 using namespace irepl;
 
-// void tokenize(const std::string& str, const std::string& delim, std::vector<std::string> &tokens, std::vector<int> &offsets) {
-// 	int tokenStart = 0;
-// 	int delimPos = str.find_first_of(delim);
-
-// 	while(delimPos != std::string::npos) {
-// 		std::string tok = str.substr(tokenStart, delimPos - tokenStart);
-// 		tokens.push_back(tok);
-// 		delimPos++;
-// 		tokenStart = delimPos;
-// 		delimPos = str.find_first_of(delim, delimPos);
-
-// 		if(delimPos == std::string::npos) {
-// 			std::string tok = str.substr(tokenStart, delimPos - tokenStart);
-// 			tokens.push_back(tok);
-// 		}   
-// 	}
-
-// 	std::cout << tokens.size() << std::endl;
-// }
-
 REPL::REPL(Replxx& rx) : rx(rx), ops(), conds(), regs() {
-	std::cout << "setting up repl" << std::endl;
-
 	rx.install_window_change_handler();
 
 	// the path to the history file
@@ -60,9 +38,9 @@ REPL::REPL(Replxx& rx) : rx(rx), ops(), conds(), regs() {
 
 	// set the callbacks
 	using namespace std::placeholders;
-	rx.set_completion_callback( std::bind( &irepl::REPL::hook_completion, this, _1, _2));
-	rx.set_highlighter_callback( std::bind( &irepl::REPL::hook_color, this, _1, _2, cref( regex_color ) ) );
-	rx.set_hint_callback( std::bind( &irepl::REPL::hook_hint, this, _1, _2, _3));
+	rx.set_completion_callback(std::bind( &irepl::REPL::hook_completion, this, _1, _2));
+	rx.set_highlighter_callback(std::bind( &irepl::REPL::hook_color, this, _1, _2));
+	rx.set_hint_callback(std::bind( &irepl::REPL::hook_hint, this, _1, _2, _3));
 
 	// other api calls
 	rx.set_word_break_characters( " \t.,-%!;:=*~^'\"/?<>|[](){}" );
@@ -161,8 +139,7 @@ REPL::REPL(Replxx& rx) : rx(rx), ops(), conds(), regs() {
 	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::DOWN ), std::bind( &irepl::REPL::message, this, std::ref( rx ), "<S-Down>", _1 ) );
 
 	fetchTokens();
-
-	std::cout << "done setting up repl" << std::endl;
+	fetchHighlights();
 }
 
 void REPL::fetchTokens() {
@@ -171,9 +148,22 @@ void REPL::fetchTokens() {
 	for (auto const& [token, i] : syntax::condMap) conds.push_back(token);
 }
 
+void REPL::fetchHighlights() {
+	highlights = regex_color;
+	for (auto const& [op, i] : syntax::opMap) 
+		for (auto flag : {"s", ""})
+			for (auto const& [cond, i] : syntax::condMap)
+				highlights.push_back({op + flag + cond, replxx::Replxx::Color::BRIGHTRED});
+
+	for (auto const& [reg, i] : syntax::regMap) highlights.push_back({reg, replxx::Replxx::Color::BRIGHTBLUE});
+}
+
 void REPL::loop(vm::Emulator emulator) {
+	std::cout << "\e[1miRISC\e[0m 0.0.1  [22nd Nov, 2020]" << std::endl;
+  std::cout << "Type \":h\" for more information." << std::endl;
+
 	// set the repl prompt
-	std::string prompt {"\x1b[1;32miRISC\x1b[0m>"};
+	std::string prompt {"\033[32miRISC\033[0m$ "};
 
 	// main repl loop
 	for (;;) {
@@ -192,24 +182,24 @@ void REPL::loop(vm::Emulator emulator) {
 		// easier to manipulate
 		std::string input {cinput};
 
-		std::cout << input << std::endl;
-
 		if (input == "") continue;
 
 		// quit command
 		if (input == ":q"){
-				break;
+			rx.history_add(input);
+			break;
 		}
 
 		if (input == ":r" || input == ":reset") {
-				emulator.reset();
+			rx.history_add(input);
+			emulator.reset();
 		}
 
 		// help command
 		else if(input == ":h"){
-
+			rx.history_add(input);
 			std::cout << "\n" << "                            Welcome to " << 
-                                    "\033[3m" << "i" << "\033[0m" << "\033[1m" << "RISC"  << "\033[0m ";
+															"\033[3m" << "i" << "\033[0m" << "\033[1m" << "RISC"  << "\033[0m ";
 			std::cout << "\n" << "             The Interactive Reduced Instruction-Set Computer                  \n\n";
 
 			std::cout <<         "To use this interactive console, just type in regular ARMv7 assembly code and     \n";
@@ -227,7 +217,8 @@ void REPL::loop(vm::Emulator emulator) {
 
 		// clear screen commands
 		else if(input == ":c"){
-				std::cout << std::string(50, '\n');
+			rx.history_add(input);
+			std::cout << std::string(50, '\n');
 		}
 
 		// Parse as assembler
@@ -238,13 +229,14 @@ void REPL::loop(vm::Emulator emulator) {
 				syntax::InstructionNode* node = parser.parseSingle();
 				// auto [instruction, explanation] = node->assemble();
 				emulator.execute(node);
-				rx.history_add(input);
 			}
 			
 			// Catch exception and print error
 			catch(const std::exception &e) {
 				std::cerr << e.what() << std::endl;
 			}
+
+			rx.history_add(input);
 		}
 	}
 
@@ -301,32 +293,35 @@ Replxx::hints_t REPL::hook_hint(std::string const& context, int& contextLen, Rep
 	// std::cout << "\n  prefic: " << prefix << std::endl;
 
 	if (prefix.size() >= 1) {
-		if (tokens == 1) {
+		if (tokens == 1) {									// operation completion
 			for (auto const& e : ops) {
 				if (e.compare(0, prefix.size(), prefix) == 0) {
 					hints.emplace_back(e.c_str());
 				}
 			}
-			// if (hints.size() == 1) {
-			// 	for (auto const& e : conds) {
-			// 		if (e.compare(0, prefix.size(), prefix) == 0) {
-			// 			hints.emplace_back((e).c_str());
-			// 		}
-			// 	}
-			// }
+			// std::cout << hints.size() << std::endl;
+			if (hints.size() == 1) {
+				hints.clear();
+				// std::cout << hints[0] << std::endl;
+				for (auto const& e : conds) {
+					// std::string combined(hints[0]);
+					// std::cout << "\t" << combined + e << std::endl;
+					hints.emplace_back((prefix + e).c_str());
+				}
+			}
 		}
 	}
 	
 
 	// set hint color to green if single match found
-	if (hints.size() == 1) {
-		color = Replxx::Color::BRIGHTBLUE;
-	}
+	// if (hints.size() == 1) {
+	// 	color = Replxx::Color::BRIGHTBLUE;
+	// }
 
 	return hints;
 }
 
-void REPL::hook_color(std::string const& context, Replxx::colors_t& colors, std::vector<std::pair<std::string, Replxx::Color>> const& regex_color) {
+void REPL::hook_color(std::string const& context, Replxx::colors_t& colors) {
 	std::vector<std::string> tokens;
 	std::vector<int> offsets;
 	std::regex words_regex("[\\s,]|[^\\s,]+");
@@ -337,7 +332,7 @@ void REPL::hook_color(std::string const& context, Replxx::colors_t& colors, std:
 	// highlight matching regex sequences
 	int offset = 0;
 	for (std::string token : tokens) {
-		for (auto const& e : regex_color) {
+		for (auto const& e : highlights) {
 			size_t pos {0};
 			std::string str = token;
 			std::smatch match;

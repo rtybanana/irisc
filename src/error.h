@@ -86,7 +86,7 @@ inline std::string LexicalError::constructHelper() const {
 
 inline const char* LexicalError::what() const noexcept {
   std::stringstream stream;
-  stream << "Lexical Error: " << msg << "\n\t" << constructHelper();
+  stream << "\033[91mLexical Error\033[0m: " << msg << "\n\t" << constructHelper();
 
   std::string* out = new std::string(stream.str());
   return out->c_str();
@@ -105,7 +105,7 @@ class SyntaxError : public Error {
 
 inline const char* SyntaxError::what() const noexcept {
   std::stringstream stream;
-  stream << "Syntax Error: " << msg << "\n\t" << constructHelper();
+  stream << "\033[91mSyntax Error\033[0m: " << msg << "\n\t" << constructHelper();
 
   std::string* out = new std::string(stream.str());
   return out->c_str();
@@ -124,7 +124,7 @@ class NumericalError : public Error {
 
 inline const char* NumericalError::what() const noexcept {
   std::stringstream stream;
-  stream << "Numerical Error: " << msg << "\n\t" << constructHelper();
+  stream << "\033[91mNumerical Error\033[0m: " << msg << "\n\t" << constructHelper();
 
   std::string* out = new std::string(stream.str());
   return out->c_str();
@@ -143,7 +143,7 @@ class AssemblyError : public Error {
 
 inline const char* AssemblyError::what() const noexcept {
   std::stringstream stream;
-  stream << "Assembly Error: " << msg << "\n\t" << constructHelper();
+  stream << "\033[91mAssembly Error\033[0m: " << msg << "\n\t" << constructHelper();
 
   std::string* out = new std::string(stream.str());
   return out->c_str();
