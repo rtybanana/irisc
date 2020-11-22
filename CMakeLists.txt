@@ -11,10 +11,16 @@ enable_testing()
 
 FIND_PACKAGE(FLTK REQUIRED)
 FIND_PACKAGE(OpenGL REQUIRED)
+INCLUDE_DIRECTORIES(/usr/local/include/replxx)
 
 add_executable(
   iRISC 
   src/main.cpp
+  src/repl/repl.cpp
+  src/repl/repl.h
+  src/repl/util.c
+  src/repl/util.h
+  src/repl/constants.h
   src/lexer/lexer.cpp
   src/lexer/lexer.h
   src/lexer/token.cpp
@@ -41,6 +47,7 @@ add_executable(
 
 TARGET_LINK_LIBRARIES(iRISC ${FLTK_LIBRARIES})
 TARGET_LINK_LIBRARIES(iRISC ${OPENGL_LIBRARIES})
+TARGET_LINK_LIBRARIES(iRISC replxx)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})

@@ -1,13 +1,13 @@
 /**
- * @file constants.h
+ * @file syntax/constants.h
  * Holds various enums useful for translating tokens into machine code. Also holds maps which are used as 
- * look up tables to quickly generate explanations and titles.
+ * look up tables to quickly generate explanations and titles for syntax and machine code.
  * @author Rory Pinkney
  * @date 28/10/20
  */
 
-#ifndef IRISC_CONSTANTS_H
-#define IRISC_CONSTANTS_H
+#ifndef IRISC_SYNTAX_CONSTANTS_H
+#define IRISC_SYNTAX_CONSTANTS_H
 
 #include <map>
 
@@ -168,4 +168,4 @@ namespace syntax {
   };
 }
 
-#endif // IRISC_CONSTANTS_H
+#endif // IRISC_SYNTAX_CONSTANTS_H

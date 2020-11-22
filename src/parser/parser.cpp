@@ -4,12 +4,12 @@
 #include <iostream>
 
 namespace parser {
-  Parser::Parser(lexer::Lexer& lexer) : lexer(lexer) {
-  }
+  Parser::Parser(lexer::Lexer& lexer) : lexer(lexer) {}
 
   syntax::InstructionNode* Parser::parseSingle() {
+
     std::vector<lexer::Token> statement;
-    while (lexer.peekToken().type() != lexer::END) {
+    while (lexer.peekToken().type() != lexer::END && lexer.peekToken().type() != lexer::ERROR) {
       statement.push_back(lexer.nextToken());
     }
 

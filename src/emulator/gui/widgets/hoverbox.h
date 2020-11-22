@@ -18,16 +18,14 @@ namespace widgets {
     private:
       std::string _title;
       std::string _detail;
+      Fl_Color _color;
       bool _hovering;
 
     public:
-      HoverBox(int x, int y, int w, int h, std::string title, std::string detail, const char* l = (const char*)0) : 
-        Fl_Box(x, y, w, h, l),
-        _title(title),
-        _detail(detail),
-        _hovering(false) {}
+      HoverBox(int x, int y, int w, int h, std::string title, std::string detail, const char* l = (const char*)0);
       std::string title() const { return _title; };
       std::string detail() const { return _detail; };
+      void highlightColor(Fl_Color color) { _color = color; };
       bool hovering() const { return _hovering; };
       int handle(int) override;
       void highlight(Fl_Color color = 0);

@@ -36,9 +36,9 @@ inline std::string Error::constructHelper() const {
     std::stringstream oss;
     bool problemToken = i == tokenIndex;
     oss << (statement[i].type() == lexer::COMMA ? "" : " ")
-        << (problemToken ? "\e[4:3m" : "")
+        << (problemToken ? "\e[1;3;4m" : "")
         << statement[i].value()
-        << (problemToken ? "\e[4:0m" : "");
+        << (problemToken ? "\e[0m" : "");
 
     helper += oss.str();  
   }
@@ -74,9 +74,9 @@ inline std::string LexicalError::constructHelper() const {
   for (int i = 0; i < statement.size(); i++) {
     std::stringstream oss;
     bool problemToken = i == symbolIndex;
-    oss << (problemToken ? "\e[4:3m" : "")
+    oss << (problemToken ? "\e[1;3;4m" : "")
         << statement[i]
-        << (problemToken ? "\e[4:0m" : "");
+        << (problemToken ? "\e[0m" : "");
 
     helper += oss.str();  
   }

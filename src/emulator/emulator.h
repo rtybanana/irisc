@@ -9,31 +9,32 @@
 #ifndef IRISC_EMULATOR_H
 #define IRISC_EMULATOR_H
 
+#include <iostream>
+#include <bitset>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Box.H>
 #include "gui/heap.h"
 #include "gui/stack.h"
 #include "gui/registers.h"
 #include "gui/instruction.h"
 #include "../parser/syntax.h"
-#include <iostream>
-#include <bitset>
 
 namespace vm {
+
   class Emulator {
     private:
       Heap heap;
       Stack stack;
       Registers registers;
       Instruction instruction;
-      bool cpsr[4];
       std::vector<syntax::Node*> program;
+      Fl_Window* window;
 
       bool executeBiOperand(syntax::BiOperandNode*);
       bool executeTriOperand(syntax::TriOperandNode*);
       bool executeShift(syntax::ShiftNode*);
-      bool checkCondition(syntax::CONDITION);
       uint32_t deflex(syntax::FlexOperand);
       uint32_t applyFlexShift(syntax::SHIFT, int, int);
-      void setFlags(uint32_t, uint32_t, uint64_t, char);
 
     public:
       Emulator();
@@ -41,7 +42,6 @@ namespace vm {
       void calculateLabelOffsets();
       void execute(syntax::InstructionNode*);
       void execute(std::vector<syntax::Node*>);
-      void printRegisters() const { registers.printRegisters(); };   // fishbone operator
   };
 }
 

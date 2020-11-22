@@ -9,17 +9,18 @@
 #ifndef IRISC_REGISTERS_H
 #define IRISC_REGISTERS_H
 
-#include "../../parser/syntax.h"
-#include "gui.h"
 #include <sstream>
 #include <iostream>
 #include <iomanip>
 #include <bitset>
 #include <FL/Fl_Window.H>
 #include <FL/Fl_Box.H>
+#include "../../parser/syntax.h"
+#include "widgets/hoverbox.h"
 
 namespace vm {
-  class Registers : gui::Window {
+
+  class Registers {
     private:
 
       class proxy {
@@ -44,21 +45,28 @@ namespace vm {
           friend std::ostream& operator<<(std::ostream& os, const proxy& p) { os << p.value; return os; };
       };
 
-      std::array<proxy, 16> _registers;
-      Fl_Window* window;
+      std::array<proxy, 16> registers;
+      bool cpsr[4];
       std::array<Fl_Box*, 16> labels;
+      std::array<Fl_Box*, 4> flags;
       std::string regstr(uint32_t);
-      // void updateWindow();
+      Fl_Box* _title;
+      Fl_Box* _details;
 
     public:
       Registers();
+      Fl_Window* window;
+      void draw();
       void update();
       void updateReg(int, uint32_t);
       void prepare();
       void clear();
-      void printRegisters() const { for (auto x = std::begin(_registers); x != std::end(_registers);){std::cout <<*x++<< ' ';} std::cout << std::endl; };   // fishbone operator
-      proxy& operator[] (int index) { return _registers[index]; };
+      void setFlags(uint32_t, uint32_t, uint64_t, char _operator = ' ');
+      bool checkFlags(syntax::CONDITION);
+      void describe(std::string, std::string);
+      proxy& operator[] (int index) { return registers[index]; };
   };
+
 }
 
 #endif //IRISC_REGISTERS_H

@@ -36,6 +36,7 @@ Token Lexer::nextToken() {
   if(current_token < tokens.size())
       return tokens[current_token++];
   else {
+      std::cout << "nextToken" << std::endl;
       std::string error = "Final token surpassed.";
       return Token(ERROR, error);
   }
@@ -82,7 +83,8 @@ Token Lexer::nextToken(std::string &program, unsigned int &current_index, unsign
     }
 
     // Rollback loop
-    unsigned int errorIndex = current_index - 2;
+    int errorIndex = current_index - 2;
+
     while(!f_states[current_state] && current_state != -1){
       current_state = state_stack.top();
       state_stack.pop();
@@ -90,21 +92,23 @@ Token Lexer::nextToken(std::string &program, unsigned int &current_index, unsign
       current_index--;
     }
 
-    if(current_state == -1) {
+    if(current_state == -1 && tokens.size() > 1) {
       std::string::reverse_iterator rLineStart = std::find_if(program.rbegin() + program.size() - errorIndex, program.rend(), [](char c){ return c == '\n' || c == std::string::npos; });
       std::string::iterator lineStart = rLineStart.base();
       std::string statement(lineStart, std::find_if(lineStart, program.end(), [](char c){ return c == '\n' || c == std::string::npos; }));
+
       int startIndex = lineStart - program.begin();
       errorIndex = errorIndex - startIndex;
 
-      throw LexicalError("Invalid token starting at position " + std::to_string(errorIndex + 1) + ".", statement, errorIndex);
+      throw LexicalError("Invalid token starting at position " + std::to_string(errorIndex + 1) + ".", statement, errorIndex + 1);
     }
 
-
-    if(f_states[current_state]) {
+    if(current_state >= 0 && f_states[current_state]) {
       return Token(current_state, std::move(lexeme), 0, tokenIndex++);
     }
-    else throw std::runtime_error("Lexical error on line.");
+    else {
+      throw LexicalError("Starting character is not recognised.", program, errorIndex);
+    }
 }
 
 int Lexer::nextState(int s, char sigma) {

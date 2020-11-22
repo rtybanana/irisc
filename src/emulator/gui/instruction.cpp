@@ -65,7 +65,13 @@ void Instruction::set(syntax::InstructionNode* instruction, bool executed) {
 
   Fl::lock();
     line->copy_label(instruction->toString().c_str());
-    executed ? status->label("Executed") : status->label("Not Executed");
+    if (executed) { 
+      status->label("Executed"); 
+      status->labelcolor(FL_DARK_GREEN); }
+    else { 
+      status->label("Not Executed"); 
+      status->labelcolor(FL_DARK_RED); 
+    }
 
     for (widgets::HoverBox* region : regions) {
       window->remove(region);
@@ -79,7 +85,7 @@ void Instruction::set(syntax::InstructionNode* instruction, bool executed) {
     int offset = 0;
     for (auto [title, detail, range] : explanation) {
       widgets::HoverBox* region = new widgets::HoverBox(10+(15*offset), 41, 15*range, 26, title, detail);
-      region->box(FL_UP_FRAME);
+      // region->box(FL_UP_FRAME);
       // region->color(FL_BLACK);
       region->callback(hover_cb, this);
       regions.push_back(region);
