@@ -17,7 +17,7 @@ int main() {
     vm::Emulator emulator;
     replxx::Replxx rx;
     irepl::REPL repl(rx);
-    std::thread repl_t(&irepl::REPL::loop, repl, emulator);
+    std::thread repl_t(&irepl::REPL::loop, repl, std::ref(emulator));
 
     while (true) {
         Fl::wait();

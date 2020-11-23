@@ -18,6 +18,7 @@
 #include "gui/registers.h"
 #include "gui/instruction.h"
 #include "../parser/syntax.h"
+#include "constants.h"
 
 namespace vm {
 
@@ -29,6 +30,7 @@ namespace vm {
       Instruction instruction;
       std::vector<syntax::Node*> program;
       Fl_Window* window;
+      MODE _mode;
 
       bool executeBiOperand(syntax::BiOperandNode*);
       bool executeTriOperand(syntax::TriOperandNode*);
@@ -42,6 +44,7 @@ namespace vm {
       void calculateLabelOffsets();
       void execute(syntax::InstructionNode*);
       void execute(std::vector<syntax::Node*>);
+      void mode(MODE);
   };
 }
 

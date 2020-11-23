@@ -14,6 +14,7 @@
 #include "../lexer/lexer.h"
 #include "../parser/parser.h"
 #include "../parser/constants.h"
+#include "../emulator/constants.h"
 
 #include "repl.h"
 #include "util.h"
@@ -158,12 +159,12 @@ void REPL::fetchHighlights() {
 	for (auto const& [reg, i] : syntax::regMap) highlights.push_back({reg, replxx::Replxx::Color::BRIGHTBLUE});
 }
 
-void REPL::loop(vm::Emulator emulator) {
+void REPL::loop(vm::Emulator &emulator) {
 	std::cout << "\e[1miRISC\e[0m 0.0.1  [22nd Nov, 2020]" << std::endl;
-  std::cout << "Type \":h\" for more information." << std::endl;
+  std::cout << "Type \":h\" for more information.\n" << std::endl;
 
 	// set the repl prompt
-	std::string prompt {"\033[32miRISC\033[0m$ "};
+	std::string prompt {"\033[32miRISC\033[0m .text$ "};
 
 	// main repl loop
 	for (;;) {
@@ -219,6 +220,15 @@ void REPL::loop(vm::Emulator emulator) {
 		else if(input == ":c"){
 			rx.history_add(input);
 			std::cout << std::string(50, '\n');
+		}
+
+		else if (input == ".text") {
+			prompt = "\033[32miRISC\033[0m \033[95m.text\033[0m$ ";
+			emulator.mode(vm::TEXT);
+		}
+		else if (input == ".data") {
+			prompt = "\033[32miRISC\033[0m \033[95m.data\033[0m$ ";
+			emulator.mode(vm::DATA);
 		}
 
 		// Parse as assembler
@@ -293,7 +303,15 @@ Replxx::hints_t REPL::hook_hint(std::string const& context, int& contextLen, Rep
 	// std::cout << "\n  prefic: " << prefix << std::endl;
 
 	if (prefix.size() >= 1) {
-		if (tokens == 1) {									// operation completion
+		if (prefix[0] == '.') {
+			for (auto const& e : directives) {
+				if (e.compare(0, prefix.size(), prefix) == 0) {
+					hints.emplace_back(e.c_str());
+				}
+			}
+		}
+
+		else if (tokens == 1) {									// operation completion
 			for (auto const& e : ops) {
 				if (e.compare(0, prefix.size(), prefix) == 0) {
 					hints.emplace_back(e.c_str());

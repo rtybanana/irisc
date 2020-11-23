@@ -176,3 +176,10 @@ bool Emulator::executeShift(syntax::ShiftNode* instruction) {
   registers[dest] = result;
   return true;
 }
+
+/**
+ * Switches the emulator mode so that it knows to parse data or text.
+ */
+void Emulator::mode(MODE mode) {
+  _mode = mode;
+}

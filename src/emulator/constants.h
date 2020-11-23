@@ -34,6 +34,14 @@ namespace vm {
     {C, "This bit is set when the operation results in an unsigned overflow."}, 
     {V, "This bit is set when the operation results in a signed overflow."}
   };
+
+
+  //******************************************************************************************
+  // MODES
+  enum MODE {
+    TEXT, 
+    DATA
+  };
 }
 
 #endif // IRISC_EMULATOR_CONSTANTS_H
