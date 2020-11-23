@@ -21,7 +21,7 @@
 using Replxx = replxx::Replxx;
 using namespace irepl;
 
-REPL::REPL(Replxx& rx) : rx(rx), ops(), conds(), regs() {
+REPL::REPL(Replxx& rx) : rx(rx), ops(), complexOps(), conds(), regs() {
 	rx.install_window_change_handler();
 
 	// the path to the history file
@@ -139,23 +139,30 @@ REPL::REPL(Replxx& rx) : rx(rx), ops(), conds(), regs() {
 	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::DOWN ), std::bind( &irepl::REPL::message, this, std::ref( rx ), "<S-Down>", _1 ) );
 
 	fetchTokens();
-	fetchHighlights();
 }
+
+// void REPL::fetchTokens() {
+// 	for (auto const& [token, i] : syntax::opMap) ops.push_back(token);
+// 	for (auto const& [token, i] : syntax::regMap) regs.push_back(token);
+// 	for (auto const& [token, i] : syntax::condMap) conds.push_back(token);
+// }
 
 void REPL::fetchTokens() {
-	for (auto const& [token, i] : syntax::opMap) ops.push_back(token);
-	for (auto const& [token, i] : syntax::regMap) regs.push_back(token);
-	for (auto const& [token, i] : syntax::condMap) conds.push_back(token);
-}
-
-void REPL::fetchHighlights() {
 	highlights = regex_color;
-	for (auto const& [op, i] : syntax::opMap) 
-		for (auto flag : {"s", ""})
-			for (auto const& [cond, i] : syntax::condMap)
+	for (auto const& [op, i] : syntax::opMap) {
+		ops.push_back(op);
+		for (auto flag : {"s", ""}) {
+			for (auto const& [cond, i] : syntax::condMap) {
+				complexOps.push_back(op + flag + cond);
 				highlights.push_back({op + flag + cond, replxx::Replxx::Color::BRIGHTRED});
+			}
+		}
+	}
 
-	for (auto const& [reg, i] : syntax::regMap) highlights.push_back({reg, replxx::Replxx::Color::BRIGHTBLUE});
+	for (auto const& [reg, i] : syntax::regMap) {
+		regs.push_back(reg);
+		highlights.push_back({reg, replxx::Replxx::Color::BRIGHTBLUE});
+	}
 }
 
 void REPL::loop(vm::Emulator emulator) {
@@ -247,6 +254,10 @@ void REPL::loop(vm::Emulator emulator) {
 
 Replxx::completions_t REPL::hook_completion(std::string const& context, int& contextLen) {
 	Replxx::completions_t completions;
+
+	int tokens = 1;
+	std::for_each(context.begin(), context.end(), [&tokens](char e){ if (isspace(e)) tokens++; });
+
 	int utf8ContextLen( context_len( context.c_str() ) );
 	int prefixLen( context.length() - utf8ContextLen );
 	if ( ( prefixLen > 0 ) && ( context[prefixLen - 1] == '\\' ) ) {
@@ -256,18 +267,37 @@ Replxx::completions_t REPL::hook_completion(std::string const& context, int& con
 	contextLen = utf8str_codepoint_len( context.c_str() + prefixLen, utf8ContextLen );
 
 	std::string prefix { context.substr(prefixLen) };
-	if ( prefix == "\\pi" ) {
-		completions.push_back( "π" );
-	} else {
-		for (auto const& e : ops) {
-			if (e.compare(0, prefix.size(), prefix) == 0) {
-				Replxx::Color c( Replxx::Color::DEFAULT );
-				if ( e.find( "brightred" ) != std::string::npos ) {
-					c = Replxx::Color::BRIGHTRED;
-				} else if ( e.find( "red" ) != std::string::npos ) {
-					c = Replxx::Color::RED;
+	// if ( prefix == "\\pi" ) {
+	// 	completions.push_back( "π" );
+	// } else {
+	// 	for (auto const& e : ops) {
+	// 		if (e.compare(0, prefix.size(), prefix) == 0) {
+	// 			Replxx::Color c( Replxx::Color::DEFAULT );
+	// 			if ( e.find( "brightred" ) != std::string::npos ) {
+	// 				c = Replxx::Color::BRIGHTRED;
+	// 			} else if ( e.find( "red" ) != std::string::npos ) {
+	// 				c = Replxx::Color::RED;
+	// 			}
+	// 			completions.emplace_back(e.c_str(), c);
+	// 		}
+	// 	}
+	// }
+
+	if (prefix.size() >= 1) {
+		if (tokens == 1) {									// operation completion
+			if (prefix.size() < 3) {
+				for (auto const& e : ops) {
+					if (e.compare(0, prefix.size(), prefix) == 0) {
+						completions.emplace_back(e.c_str());
+					}
 				}
-				completions.emplace_back(e.c_str(), c);
+			}
+			else {
+				for (auto const& e : complexOps) {
+					if (e.compare(0, prefix.size(), prefix) == 0) {
+						completions.emplace_back(e.c_str());
+					}
+				}
 			}
 		}
 	}
@@ -294,21 +324,30 @@ Replxx::hints_t REPL::hook_hint(std::string const& context, int& contextLen, Rep
 
 	if (prefix.size() >= 1) {
 		if (tokens == 1) {									// operation completion
-			for (auto const& e : ops) {
-				if (e.compare(0, prefix.size(), prefix) == 0) {
-					hints.emplace_back(e.c_str());
+			if (prefix.size() < 3) {
+				for (auto const& e : ops) {
+					if (e.compare(0, prefix.size(), prefix) == 0) {
+						hints.emplace_back(e.c_str());
+					}
+				}
+			}
+			else {
+				for (auto const& e : complexOps) {
+					if (e.compare(0, prefix.size(), prefix) == 0) {
+						hints.emplace_back(e.c_str());
+					}
 				}
 			}
 			// std::cout << hints.size() << std::endl;
-			if (hints.size() == 1) {
-				hints.clear();
-				// std::cout << hints[0] << std::endl;
-				for (auto const& e : conds) {
-					// std::string combined(hints[0]);
-					// std::cout << "\t" << combined + e << std::endl;
-					hints.emplace_back((prefix + e).c_str());
-				}
-			}
+			// if (hints.size() == 1) {
+			// 	hints.clear();
+			// 	// std::cout << hints[0] << std::endl;
+			// 	for (auto const& e : conds) {
+			// 		// std::string combined(hints[0]);
+			// 		// std::cout << "\t" << combined + e << std::endl;
+			// 		hints.emplace_back((prefix + e).c_str());
+			// 	}
+			// }
 		}
 	}
 	
