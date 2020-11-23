@@ -15,6 +15,7 @@ namespace irepl {
       replxx::Replxx& rx;
       std::string history_file;
       std::vector<std::string> ops;
+      std::vector<std::string> complexOps;
       std::vector<std::string> regs;
       std::vector<std::string> conds;
       std::vector<std::pair<std::string, replxx::Replxx::Color>> highlights;
