@@ -39,7 +39,7 @@ Registers::Registers() : registers {}, labels {}, cpsr {}, flags {} {
 
       // explain on hover
       syntax::REGISTER r = static_cast<syntax::REGISTER>(index);
-      widgets::HoverBox* hover = new widgets::HoverBox(10, 10+(25*index), 200, 25, syntax::regTitle[r], "");
+      widgets::HoverBox* hover = new widgets::HoverBox(10, 10+(25*index), 200, 25, syntax::regTitle[r], syntax::regExplain[r] + "\nDecimal value: 0\nHex value: 0x0");
       hover->callback(hover_cb, this);
     }
 
@@ -194,7 +194,7 @@ bool Registers::checkFlags(syntax::CONDITION cond) {
       return true;                                          // AL flag returns true regardless
   }
 
-  if (bits[3] == 1) result = !result;
+  if (bits[0] == 1) result = !result;
   return result;                                        
 }
 

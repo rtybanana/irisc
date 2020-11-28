@@ -44,7 +44,7 @@ REPL::REPL(Replxx& rx) : rx(rx), ops(), complexOps(), conds(), regs() {
 	rx.set_hint_callback(std::bind( &irepl::REPL::hook_hint, this, _1, _2, _3));
 
 	// other api calls
-	rx.set_word_break_characters( " \t.,-%!;:=*~^'\"/?<>|[](){}" );
+	// rx.set_word_break_characters( " \t.,-%!;:=*~^'\"/?<>|[](){}" );
 	rx.set_completion_count_cutoff( 128 );
 	rx.set_double_tab_completion( false );
 	rx.set_complete_on_empty( true );
@@ -142,17 +142,11 @@ REPL::REPL(Replxx& rx) : rx(rx), ops(), complexOps(), conds(), regs() {
 	fetchTokens();
 }
 
-// void REPL::fetchTokens() {
-// 	for (auto const& [token, i] : syntax::opMap) ops.push_back(token);
-// 	for (auto const& [token, i] : syntax::regMap) regs.push_back(token);
-// 	for (auto const& [token, i] : syntax::condMap) conds.push_back(token);
-// }
-
 void REPL::fetchTokens() {
 	highlights = regex_color;
 	for (auto const& [op, i] : syntax::opMap) {
 		ops.push_back(op);
-		for (auto flag : {"s", ""}) {
+		for (auto flag : {"", "s"}) {
 			for (auto const& [cond, i] : syntax::condMap) {
 				complexOps.push_back(op + flag + cond);
 				highlights.push_back({op + flag + cond, replxx::Replxx::Color::BRIGHTRED});
@@ -171,7 +165,7 @@ void REPL::loop(vm::Emulator &emulator) {
   std::cout << "Type \":h\" for more information.\n" << std::endl;
 
 	// set the repl prompt
-	std::string prompt {"\033[32miRISC\033[0m .text$ "};
+	std::string prompt {"\033[32miRISC\033[0m \033[95m.text\033[0m$ "};
 
 	// main repl loop
 	for (;;) {
@@ -277,24 +271,16 @@ Replxx::completions_t REPL::hook_completion(std::string const& context, int& con
 	contextLen = utf8str_codepoint_len( context.c_str() + prefixLen, utf8ContextLen );
 
 	std::string prefix { context.substr(prefixLen) };
-	// if ( prefix == "\\pi" ) {
-	// 	completions.push_back( "π" );
-	// } else {
-	// 	for (auto const& e : ops) {
-	// 		if (e.compare(0, prefix.size(), prefix) == 0) {
-	// 			Replxx::Color c( Replxx::Color::DEFAULT );
-	// 			if ( e.find( "brightred" ) != std::string::npos ) {
-	// 				c = Replxx::Color::BRIGHTRED;
-	// 			} else if ( e.find( "red" ) != std::string::npos ) {
-	// 				c = Replxx::Color::RED;
-	// 			}
-	// 			completions.emplace_back(e.c_str(), c);
-	// 		}
-	// 	}
-	// }
-
 	if (prefix.size() >= 1) {
-		if (tokens == 1) {									// operation completion
+		if (prefix[0] == '.') {
+			for (auto const& e : directives) {
+				if (e.compare(0, prefix.size(), prefix) == 0) {
+					completions.emplace_back(e.c_str());
+				}
+			}
+		}
+
+		else if (tokens == 1) {									// operation completion
 			if (prefix.size() < 3) {
 				for (auto const& e : ops) {
 					if (e.compare(0, prefix.size(), prefix) == 0) {

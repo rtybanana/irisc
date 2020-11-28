@@ -134,6 +134,18 @@ namespace syntax {
     {R12, "Register 12"}, {SP, "Stack Pointer"}, {LR, "Link Register"}, {PC, "Program Counter"}, 
   };
 
+  static std::map<REGISTER, std::string> regExplain {
+    {R0, "General Purpose Register\n"}, {R1, "General Purpose Register\n"}, 
+    {R2, "General Purpose Register\n"}, {R3, "General Purpose Register\n"}, 
+    {R4, "General Purpose Register\n"}, {R5, "General Purpose Register\n"}, 
+    {R6, "General Purpose Register\n"}, {R7, "General Purpose Register\n"}, 
+    {R8, "General Purpose Register\n"}, {R9, "General Purpose Register\n"}, 
+    {R10, "General Purpose Register\n"}, {R11, "General Purpose Register\n"},  
+    {R12, "General Purpose Register\n"}, 
+    {SP, "The memory address for the top of the stack."}, 
+    {LR, "The return address of the current function."}, 
+    {PC, "The memory address of the current instruction."}, 
+  };
 
   //**********************************************************************************************
   // SHIFTS
