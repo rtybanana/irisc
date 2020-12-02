@@ -13,10 +13,10 @@
 #include <bitset>
 #include <FL/Fl_Window.H>
 #include <FL/Fl_Box.H>
-#include "gui/heap.h"
-#include "gui/stack.h"
-#include "gui/registers.h"
-#include "gui/instruction.h"
+#include "windows/heap.h"
+#include "windows/stack.h"
+#include "windows/registers.h"
+#include "windows/instruction.h"
 #include "../parser/syntax.h"
 #include "constants.h"
 

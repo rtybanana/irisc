@@ -18,12 +18,7 @@ namespace gui {
     int result = fl_choice("Are you sure you want to exit?", "Yes", "No", 0);
     if (result == 0) Fl::awake(new int(0));
   }
-
-  class Window {
-    public:
-      virtual void childHover() { return; };      // virtual function with a default which does nothing
-  };
-
+  
 }
 
 #endif  // IRISC_GUI_H

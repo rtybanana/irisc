@@ -16,7 +16,7 @@
 #include <FL/Fl_Window.H>
 #include <FL/Fl_Box.H>
 #include "../../parser/syntax.h"
-#include "widgets/hoverbox.h"
+#include "../../widgets/hoverbox.h"
 
 namespace vm {
 
@@ -45,6 +45,7 @@ namespace vm {
           friend std::ostream& operator<<(std::ostream& os, const proxy& p) { os << p.value; return os; };
       };
 
+      Fl_Window* window;
       std::array<proxy, 16> registers;
       bool cpsr[4];
       std::array<Fl_Box*, 16> labels;
@@ -55,7 +56,6 @@ namespace vm {
 
     public:
       Registers();
-      Fl_Window* window;
       void draw();
       void update();
       void updateReg(int, uint32_t);

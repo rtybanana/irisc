@@ -9,7 +9,7 @@
 #define IRISC_INSTRUCTION_H
 
 #include "../../parser/syntax.h"
-#include "widgets/hoverbox.h"
+#include "../../widgets/hoverbox.h"
 #include <FL/Fl_Window.H>
 #include <FL/Fl_Box.H>
 

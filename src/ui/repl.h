@@ -6,13 +6,13 @@
 #include "../emulator/emulator.h"
 #include "constants.h"
 
-namespace irepl {
+namespace ui {
   // prototypes
 
 
   class REPL {
     private: 
-      replxx::Replxx& rx;
+      replxx::Replxx &rx;
       std::string history_file;
       std::vector<std::string> ops;
       std::vector<std::string> complexOps;

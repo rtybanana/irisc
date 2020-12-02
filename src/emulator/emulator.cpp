@@ -1,6 +1,6 @@
 #include <bit>
 #include "emulator.h"
-#include "gui/gui.h"
+// #include "windows/gui.h"
 
 using namespace vm;
 

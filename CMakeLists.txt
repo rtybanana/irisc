@@ -16,11 +16,13 @@ INCLUDE_DIRECTORIES(/usr/local/include/replxx)
 add_executable(
   iRISC 
   src/main.cpp
-  src/repl/repl.cpp
-  src/repl/repl.h
-  src/repl/util.c
-  src/repl/util.h
-  src/repl/constants.h
+  src/ui/repl.cpp
+  src/ui/repl.h
+  src/ui/editor.cpp
+  src/ui/editor.h
+  src/ui/util.c
+  src/ui/util.h
+  src/ui/constants.h
   src/lexer/lexer.cpp
   src/lexer/lexer.h
   src/lexer/token.cpp
@@ -32,17 +34,17 @@ add_executable(
   src/parser/constants.h
   src/emulator/emulator.cpp
   src/emulator/emulator.h
-  src/emulator/gui/registers.cpp
-  src/emulator/gui/registers.h
-  src/emulator/gui/stack.cpp
-  src/emulator/gui/stack.h
-  src/emulator/gui/heap.cpp
-  src/emulator/gui/heap.h
-  src/emulator/gui/instruction.cpp
-  src/emulator/gui/instruction.h
-  src/emulator/gui/gui.h
-  src/emulator/gui/widgets/hoverbox.cpp
-  src/emulator/gui/widgets/hoverbox.h
+  src/emulator/windows/registers.cpp
+  src/emulator/windows/registers.h
+  src/emulator/windows/stack.cpp
+  src/emulator/windows/stack.h
+  src/emulator/windows/heap.cpp
+  src/emulator/windows/heap.h
+  src/emulator/windows/instruction.cpp
+  src/emulator/windows/instruction.h
+  src/emulator/windows/gui.h
+  src/widgets/hoverbox.cpp
+  src/widgets/hoverbox.h
 )
 
 TARGET_LINK_LIBRARIES(iRISC ${FLTK_LIBRARIES})

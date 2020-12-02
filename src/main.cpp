@@ -10,14 +10,14 @@
 #include "lexer/token.h"
 #include "parser/parser.h"
 #include "parser/syntax.h"
-#include "repl/repl.h"
+#include "ui/repl.h"
 
 int main() {
     Fl::lock();
     vm::Emulator emulator;
     replxx::Replxx rx;
-    irepl::REPL repl(rx);
-    std::thread repl_t(&irepl::REPL::loop, repl, std::ref(emulator));
+    ui::REPL repl(rx);
+    std::thread repl_t(&ui::REPL::loop, repl, std::ref(emulator));
 
     while (true) {
         Fl::wait();

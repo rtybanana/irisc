@@ -8,7 +8,7 @@
 #ifndef IRISC_HOVERBOX_H
 #define IRISC_HOVERBOX_H
 
-#include "../gui.h"
+// #include "../gui.h"
 #include <FL/Fl_Box.H>
 #include <FL/Fl_Window.H>
 #include <string>

@@ -132,7 +132,7 @@ inline const char* NumericalError::what() const noexcept {
 
 
 /**
- * AssemblyError class - informs the user that an immediate value they have entered is invalid.
+ * AssemblyError class - informs the user that an error occured while assembling their code, usually an internal bug.
  */
 class AssemblyError : public Error {
   public:
