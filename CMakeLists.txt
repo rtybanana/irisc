@@ -4,17 +4,17 @@ project(iRISC VERSION 0.1.0)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 
 include(CTest)
 enable_testing()
 
-FIND_PACKAGE(FLTK REQUIRED)
-FIND_PACKAGE(OpenGL REQUIRED)
-INCLUDE_DIRECTORIES(/usr/local/include/replxx)
+find_package(FLTK REQUIRED)
+find_package(OpenGL REQUIRED)
+include_directories(/usr/local/include/replxx)
 
 add_executable(
-  iRISC 
+  irisc 
   src/main.cpp
   src/ui/repl.cpp
   src/ui/repl.h
@@ -47,9 +47,24 @@ add_executable(
   src/widgets/hoverbox.h
 )
 
-TARGET_LINK_LIBRARIES(iRISC ${FLTK_LIBRARIES})
-TARGET_LINK_LIBRARIES(iRISC ${OPENGL_LIBRARIES})
-TARGET_LINK_LIBRARIES(iRISC replxx)
+target_link_libraries(irisc ${FLTK_LIBRARIES})
+target_link_libraries(irisc ${OPENGL_LIBRARIES})
+target_link_libraries(irisc replxx)
+
+
+
+find_package(Catch2 REQUIRED)
+
+add_executable(
+  tests 
+  tests/lexer.cpp
+)
+
+target_link_libraries(tests Catch2::Catch2WithMain)
+
+include(CTest)
+include(Catch)
+catch_discover_tests(tests)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})

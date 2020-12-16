@@ -13,6 +13,9 @@ namespace parser {
       statement.push_back(lexer.nextToken());
     }
 
+    if (statement.empty()) 
+      return nullptr;                                 // safely return nullptr which can be caught and dealt with
+
     if (statement[0].type() == lexer::BI_OPERAND) 
       return new syntax::BiOperandNode(statement);
     

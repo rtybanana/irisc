@@ -6,6 +6,8 @@
 #include <string>
 #include <FL/Fl.H>
 #include <FL/Fl_Box.H>
+#include <FL/Fl_Button.H>
+#include <FL/Fl_Group.H>
 
 using namespace ui;
 
@@ -17,6 +19,11 @@ void changed_cb(int, int nInserted, int nDeleted,int, const char*, void* v) {
   }
 }
 
+void run_cb(Fl_Widget* widget, void* v) {
+  Editor* editor = (Editor*) v;
+  editor->textbuf->lines();
+}
+
 void cursorBlink(void* window) {
   Editor* editor = (Editor*)window;
   editor->blink();
@@ -24,16 +31,13 @@ void cursorBlink(void* window) {
 }
 
 Editor::Editor() : cursorHidden(false) {
-  Fl::set_color(FL_RED, uchar(255), uchar(85), uchar(85));
-  Fl::set_color(FL_BLUE, uchar(100), uchar(100), uchar(255));
-
   Fl::lock();
     window = new Fl_Window(280,350,"Editor");
-    window->color(FL_BLACK);
+    window->color(fl_rgb_color(uchar(35)));
 
-    editor = new Fl_Text_Editor(10, 30, 260, 310);
-    Fl_Box* border = new Fl_Box(9, 29, 262, 312);
-    textbuf = new Fl_Text_Buffer();
+    editor = new Fl_Text_Editor(10, 40, 260, 300);
+    Fl_Box* border = new Fl_Box(9, 39, 262, 302);
+    textbuf = new TextBuffer();
     stylebuf = new Fl_Text_Buffer();
 
     editor->buffer(textbuf);
@@ -41,13 +45,13 @@ Editor::Editor() : cursorHidden(false) {
     editor->cursor_color(FL_WHITE);
     editor->textfont(FL_COURIER);      // style buffer
     editor->box(FL_NO_BOX);
-    editor->color(FL_BLACK);
+    editor->color(fl_rgb_color(uchar(20)));
     editor->textcolor(FL_WHITE);
     editor->textsize(15);
     editor->selection_color(FL_YELLOW);
 
     border->box(FL_BORDER_FRAME);
-    border->color(FL_WHITE);
+    border->color(fl_rgb_color(uchar(150)));
 
     int stylesize = sizeof(styles)/sizeof(styles[0]);
     editor->highlight_data(stylebuf, styles, stylesize, 'A', 0, 0);
@@ -58,9 +62,23 @@ Editor::Editor() : cursorHidden(false) {
     
     Fl::add_timeout(0.5, cursorBlink, this);
 
+    Fl_Group* btns = new Fl_Group(10, 10, 260, 25);
+    Fl_Button* run = new Fl_Button(215, 10, 25, 25, "@+1>");
+    Fl_Button* ffw = new Fl_Button(245, 10, 25, 25, "@+1>>");
+    run->box(FL_BORDER_FRAME);
+    run->color(ui::grey);
+    run->labelcolor(fl_rgb_color(uchar(0x0b), uchar(0xad), uchar(0x0b)));
+    ffw->box(FL_BORDER_FRAME);
+    ffw->color(ui::grey);;
+    ffw->labelcolor(fl_rgb_color(uchar(0x0b), uchar(0xad), uchar(0x0b)));
+    run->callback(run_cb, this);
+
+    Fl_Box* space = new Fl_Box(10, 10, 200, 25);
+    btns->resizable(space);
+    btns->end();
+
     window->end();
     window->resizable(editor);
-    // window->show();
   Fl::unlock();
 
   Fl::awake();
@@ -102,7 +120,7 @@ void Editor::highlight() {
     basepoint = c1 + c2;                      // start point for the find function for the next loop
     if (styleMap.contains(match)) {
       char styleType = styleMap.at(match);
-      std::cout << match << " at position " << c2 << " of size " << c1 << " | start next check from " << basepoint << std::endl;
+      // std::cout << match << " at position " << c2 << " of size " << c1 << " | start next check from " << basepoint << std::endl;
       for (int i = 0; i < c1; i++) style += styleType;
     }
     else for (int i = 0; i < c1; i++) style += ' ';
@@ -119,4 +137,19 @@ void Editor::blink() {
 void Editor::toggle() {
   if (window->visible()) window->hide();
   else window->show();
+}
+
+
+/**
+ * TextBuffer class extension
+ */
+std::vector<std::string> TextBuffer::lines() {
+  std::string text(this->text());
+  std::cout << text << std::endl;
+  // int index = 0;
+  // for (char c : text) {
+  //   std::cout << c << std::endl;
+  // }
+
+  return {"", ""};
 }

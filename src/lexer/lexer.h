@@ -63,10 +63,12 @@ namespace lexer {
       std::vector<Token> tokens;
 
       int nextState(int, char);
+      bool hasToken(std::string&, unsigned int&);
       Token nextToken(std::string&, unsigned int&, unsigned int&);
 
     public:
       Lexer(std::string&);
+      
       Token peekToken();
       Token nextToken();
       std::vector<Token> getTokens();

@@ -246,7 +246,7 @@ void REPL::loop(vm::Emulator &emulator) {
 				parser::Parser parser(lexer);
 				syntax::InstructionNode* node = parser.parseSingle();
 				// auto [instruction, explanation] = node->assemble();
-				emulator.execute(node);
+				if (node != nullptr) emulator.execute(node);
 			}
 			
 			// Catch exception and print error

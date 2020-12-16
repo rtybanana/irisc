@@ -15,10 +15,12 @@ Lexer::Lexer(std::string& program) {
     // Tokenise the program, ignoring comments
     Token t;
     while(current_index <= program.length() && program.substr(current_index, program.size()).find_first_not_of('\0') != std::string::npos) {
-      t = nextToken(program, current_index, tokenIndex);
-      tokens.push_back(t);
+      if (hasToken(program, current_index)) {
+        t = nextToken(program, current_index, tokenIndex);
+        tokens.push_back(t);
+      }
     }
-    tokens.push_back(Token(END, "", 0, tokenIndex));    // adding final END token
+    if (!tokens.empty()) tokens.push_back(Token(END, "", 0, tokenIndex));    // adding final END token
 }
 
 Lexer::~Lexer() = default;
@@ -46,6 +48,15 @@ std::vector<Token> Lexer::getTokens() {
   return tokens;
 }
 
+bool Lexer::hasToken(std::string &program, unsigned int &current_index) {
+  while(current_index < program.length() &&
+       (program[current_index] == ' ' || program[current_index] == '\n' ))
+    current_index++;
+
+  if (current_index == program.length()) return false;
+  return true;
+}
+
 Token Lexer::nextToken(std::string &program, unsigned int &current_index, unsigned int &tokenIndex) {
 
     // Setup stack and lexeme
@@ -57,10 +68,10 @@ Token Lexer::nextToken(std::string &program, unsigned int &current_index, unsign
     // Push 'BAD' state on the stack
     state_stack.push(-1);
 
-    // Ignore whitespaces or newlines in front of lexeme
-    while(current_index < program.length() &&
-          (program[current_index] == ' ' || program[current_index] == '\n' ))
-        current_index++;
+    // // Ignore whitespaces or newlines in front of lexeme
+    // while(current_index < program.length() &&
+    //      (program[current_index] == ' ' || program[current_index] == '\n' ))
+    //   current_index++;
     
     // While current state is not error state
     while(current_state != e){
