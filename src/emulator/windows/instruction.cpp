@@ -24,10 +24,12 @@ Instruction::Instruction() {
     // sharedStatus->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
     line = new Fl_Box(10, 10, 480, 26, "No Instruction");
     line->labelfont(FL_BOLD);
+    line->labelsize(15);
     line->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
 
     status = new Fl_Box(10, 10, 480, 26, "N/A");
     status->labelfont(FL_BOLD);
+    status->labelsize(15);
     status->align(FL_ALIGN_RIGHT | FL_ALIGN_INSIDE);
 
     Fl_Box* boundary = new Fl_Box(10, 41, 480, 26);
@@ -36,7 +38,7 @@ Instruction::Instruction() {
     for(int i = 0; i < 32; i++){
       Fl_Box* bit = new Fl_Box(10+(15*i), 41, 15, 26, "0");
       bit->labelfont(FL_COURIER);
-      bit->labelsize(15);
+      bit->labelsize(16);
 
       bits[i] = bit;
     }
@@ -45,8 +47,10 @@ Instruction::Instruction() {
     explanation->box(FL_UP_BOX);
     _title = new Fl_Box(10, 72, 480, 26);
     _title->labelfont(FL_BOLD);
+    _title->labelsize(15);
     _title->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
     _details = new Fl_Box(10, 98, 480, 52);
+    _details->labelsize(15);
     _details->align(FL_ALIGN_LEFT_BOTTOM | FL_ALIGN_INSIDE | FL_ALIGN_WRAP);
 
     describe("No Instruction", "Execute an instruction to examine its machine code.");

@@ -98,7 +98,7 @@ inline const char* LexicalError::what() const noexcept {
  */ 
 class SyntaxError : public Error {
   public:
-    SyntaxError(std::string msg, std::vector<lexer::Token> statement, int tokenIndex)
+    SyntaxError(std::string msg, std::vector<lexer::Token> statement, int tokenIndex = -1)
       : Error(msg, statement, tokenIndex) {};
     const char* what() const noexcept override;
 };
@@ -117,7 +117,7 @@ inline const char* SyntaxError::what() const noexcept {
  */
 class NumericalError : public Error {
   public:
-    NumericalError(std::string msg, std::vector<lexer::Token> statement, int tokenIndex)
+    NumericalError(std::string msg, std::vector<lexer::Token> statement, int tokenIndex = -1)
       : Error(msg, statement, tokenIndex) {};
     const char* what() const noexcept override;
 };
@@ -144,6 +144,44 @@ class AssemblyError : public Error {
 inline const char* AssemblyError::what() const noexcept {
   std::stringstream stream;
   stream << "\033[91mAssembly Error\033[0m: " << msg << "\n\t" << constructHelper();
+
+  std::string* out = new std::string(stream.str());
+  return out->c_str();
+}
+
+
+/**
+ * RuntimeError class - informs the user that an error occurred while executing their code, such as a segmentation error.
+ */
+class RuntimeError : public Error {
+  public:
+    RuntimeError(std::string msg, std::vector<lexer::Token> statement, int tokenIndex = -1)
+      : Error(msg, statement, tokenIndex) {};
+    const char* what() const noexcept override;
+};
+
+inline const char* RuntimeError::what() const noexcept {
+  std::stringstream stream;
+  stream << "\033[91mRuntime Error\033[0m: " << msg << "\n\t" << constructHelper();
+
+  std::string* out = new std::string(stream.str());
+  return out->c_str();
+}
+
+
+/**
+ * InteractiveError class - informs the user that an error occured while assembling their code, usually an internal bug.
+ */
+class InteractiveError : public Error {
+  public:
+    InteractiveError(std::string msg, std::vector<lexer::Token> statement, int tokenIndex = -1)
+      : Error(msg, statement, tokenIndex) {};
+    const char* what() const noexcept override;
+};
+
+inline const char* InteractiveError::what() const noexcept {
+  std::stringstream stream;
+  stream << "\033[91mInteractive Error\033[0m: " << msg << "\n\t" << constructHelper();
 
   std::string* out = new std::string(stream.str());
   return out->c_str();

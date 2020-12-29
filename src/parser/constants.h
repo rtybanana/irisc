@@ -10,6 +10,7 @@
 #define IRISC_SYNTAX_CONSTANTS_H
 
 #include <map>
+#include <variant>
 
 namespace syntax {
 
@@ -147,6 +148,7 @@ namespace syntax {
     {PC, "The memory address of the current instruction."}, 
   };
 
+
   //**********************************************************************************************
   // SHIFTS
   enum SHIFT {
@@ -162,6 +164,8 @@ namespace syntax {
     {ASR, "Arithmetic Shift Right"}, {ROR, "Rotate Right"}
   };
 
+
+  //*********************************************************************************************
   // LOAD/STORE sizes
   enum SIZE {
     BYTE, HALFWORD, WORD
@@ -177,6 +181,32 @@ namespace syntax {
   static std::string flagsExplain[] = {
     "Do not set the CPSR flags based on the result of this instruction.",
     "Set the CPSR flags based on the result of this instruction."
+  };
+
+
+  //*******************************************************************************************
+  // TYPE DIRECTIVES
+  static std::map<std::string, std::variant<std::monostate, uint8_t, uint16_t, uint32_t, std::string>> typeMap {
+    { ".skip", std::monostate() }, { ".ascii", std::string() }, 
+    { ".asciz", std::string() }, { ".string", std::string() },
+    { ".byte", uint8_t() }, { ".hword", uint16_t() },
+    { ".word", uint32_t() }
+  };
+
+  // DIRECTIVES
+  enum DIRECTIVE {
+    TEXT, DATA, GLOBAL
+  };
+
+  static std::map<std::string, DIRECTIVE> directiveMap = {
+    { ".text", TEXT }, { ".data", DATA }, { ".global", GLOBAL }
+  };
+
+
+  //******************************************************************************************
+  // NODE FAMILY
+  enum FAMILY {
+    F_INSTRUCTION, F_ALLOCATION, F_DIRECTIVE, F_LABEL
   };
 }
 

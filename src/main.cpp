@@ -12,7 +12,12 @@
 #include "parser/syntax.h"
 #include "ui/repl.h"
 
+#define STR(x)   #x
+#define SHOW_DEFINE(x) printf("%s=%s\n", #x, STR(x))
+
 int main() {
+    SHOW_DEFINE(FL_ABI_VERSION);
+
     Fl::lock();
     vm::Emulator emulator;
     replxx::Replxx rx;

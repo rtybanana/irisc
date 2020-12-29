@@ -5,16 +5,19 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+set(FLTK_DIR /home/rory/downloads/fltk-1.3.5/build)
+set(OpenGL_GL_PREFERENCE "LEGACY")
 
 include(CTest)
 enable_testing()
 
-find_package(FLTK REQUIRED)
+find_package(FLTK REQUIRED NO_MODULE)
 find_package(OpenGL REQUIRED)
 include_directories(/usr/local/include/replxx)
 
 add_executable(
   irisc 
+  WIN32 MACOSX_BUNDLE
   src/main.cpp
   src/ui/repl.cpp
   src/ui/repl.h
@@ -36,10 +39,8 @@ add_executable(
   src/emulator/emulator.h
   src/emulator/windows/registers.cpp
   src/emulator/windows/registers.h
-  src/emulator/windows/stack.cpp
-  src/emulator/windows/stack.h
-  src/emulator/windows/heap.cpp
-  src/emulator/windows/heap.h
+  src/emulator/windows/memory.cpp
+  src/emulator/windows/memory.h
   src/emulator/windows/instruction.cpp
   src/emulator/windows/instruction.h
   src/emulator/windows/gui.h
@@ -47,7 +48,9 @@ add_executable(
   src/widgets/hoverbox.h
 )
 
-target_link_libraries(irisc ${FLTK_LIBRARIES})
+target_include_directories(irisc PUBLIC ${FLTK_INCLUDE_DIRS})
+
+target_link_libraries(irisc fltk)
 target_link_libraries(irisc ${OPENGL_LIBRARIES})
 target_link_libraries(irisc replxx)
 

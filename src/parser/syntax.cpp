@@ -17,38 +17,38 @@ using namespace syntax;
  */
 Node::Node() = default;
 
-Node::Node(std::vector<lexer::Token> statement) : statement(statement) {}
+Node::Node(std::vector<lexer::Token> statement) : _statement(statement) {}
 
 Node::Node(std::vector<lexer::Token> statement, unsigned int currentToken) : 
-  statement(statement), 
+  _statement(statement), 
   currentToken(currentToken) 
 {}
 
 Node::~Node() {}
 
 lexer::Token Node::nextToken() { 
-  if (currentToken < statement.size())
-    return statement[currentToken++];
-  else throw SyntaxError("Unexpected instruction end '" + statement.back().value() + "'.", statement, statement.size() - 1);
+  if (currentToken < _statement.size())
+    return _statement[currentToken++];
+  else throw SyntaxError("Unexpected instruction end '" + _statement.back().value() + "'.", _statement, _statement.size() - 1);
 }
 
 lexer::Token Node::peekToken() { 
-  if (currentToken < statement.size())
-    return statement[currentToken];
-  else throw SyntaxError("Unexpected instruction end '" + statement.back().value() + "'.", statement, statement.size() - 1);
+  if (currentToken < _statement.size())
+    return _statement[currentToken];
+  else throw SyntaxError("Unexpected instruction end '" + _statement.back().value() + "'.", _statement, _statement.size() - 1);
 }
 
 bool Node::hasToken() {
-  if (currentToken < statement.size()) return true;
+  if (currentToken < _statement.size()) return true;
   return false;
 }
 
 std::string Node::toString() {
   std::string instruction = "";
-  for (int i = 0; i < statement.size(); i++) {
+  for (int i = 0; i < _statement.size(); i++) {
     std::stringstream oss;
-    oss << (statement[i].type() == lexer::COMMA || i == 0 ? "" : " ")
-        << statement[i].value();
+    oss << (_statement[i].type() == lexer::COMMA || i == 0 ? "" : " ")
+        << _statement[i].value();
 
     instruction += oss.str();  
   }
@@ -61,12 +61,12 @@ std::string Node::toString() {
  */
 bool Node::parseComma(lexer::Token token) {
   if (token.type() == lexer::COMMA) return true;
-  else throw SyntaxError("COMMA expected between operands - received " + lexer::tokenNames[token.type()] + " '" + token.value() + "', instead.", statement, currentToken - 1);
+  else throw SyntaxError("COMMA expected between operands - received " + lexer::tokenNames[token.type()] + " '" + token.value() + "', instead.", _statement, currentToken - 1);
 }
 
 REGISTER Node::parseRegister(lexer::Token token) {
   if (token.type() == lexer::REGISTER) return regMap[token.value()];
-  else throw SyntaxError("REGISTER expected - received " + lexer::tokenNames[token.type()] + " '" + token.value() + "' instead.", statement, currentToken - 1);
+  else throw SyntaxError("REGISTER expected - received " + lexer::tokenNames[token.type()] + " '" + token.value() + "' instead.", _statement, currentToken - 1);
 }
 
 uint64_t Node::parseImmediate(lexer::Token token) {
@@ -88,7 +88,7 @@ uint64_t Node::parseImmediate(lexer::Token token) {
     base = 16;
     start = token.value().find_last_not_of("0123456789abcdef");
   }
-  else throw SyntaxError("IMMEDIATE value expected - received " + lexer::tokenNames[token.type()] + " '" + token.value() + "' instead.", statement, token.tokenNumber());
+  else throw SyntaxError("IMMEDIATE value expected - received " + lexer::tokenNames[token.type()] + " '" + token.value() + "' instead.", _statement, token.tokenNumber());
 
   return std::strtoull(token.value().substr(start + 1, token.value().size()).c_str(), nullptr, base);
 }
@@ -99,11 +99,11 @@ uint64_t Node::parseImmediate(lexer::Token token) {
 uint32_t Node::parseImmediate(lexer::Token token, unsigned int bits) {
   uint64_t imm = parseImmediate(token);
   if (imm < pow(2, bits)) return imm;
-  else throw NumericalError("IMMEDIATE value '" + token.value() + "' (decimal " + std::to_string(imm) + ") is greater than the " + std::to_string(bits) + "-bit maximum.", statement, token.tokenNumber());
+  else throw NumericalError("IMMEDIATE value '" + token.value() + "' (decimal " + std::to_string(imm) + ") is greater than the " + std::to_string(bits) + "-bit maximum.", _statement, token.tokenNumber());
 }
 
 /**
- * Parse immediate value with maximum bit-width and ARMv7 barrel shifter paradigm
+ * Parse immediate value with maximum bit-width and ARMv7 barrel shift applied if necessary
  */
 uint32_t Node::parseImmediate(lexer::Token token, unsigned int bits, unsigned int& immShift) {
   uint64_t imm = parseImmediate(token); 
@@ -115,9 +115,9 @@ uint32_t Node::parseImmediate(lexer::Token token, unsigned int bits, unsigned in
   int topbit = (int)std::log2(imm);
   // std::cout << bottombit << ", " << topbit << std::endl;
   if (topbit > 31)
-    throw NumericalError("IMMEDIATE value '" + token.value() + "' (decimal " + std::to_string(imm) + ") cannot be represented in 32 bits.", statement, token.tokenNumber());
+    throw NumericalError("IMMEDIATE value '" + token.value() + "' (decimal " + std::to_string(imm) + ") cannot be represented in 32 bits.", _statement, token.tokenNumber());
   if ((topbit - bottombit) > --bits)
-    throw NumericalError("IMMEDIATE value '" + token.value() + "' (decimal " + std::to_string(imm) + ") cannot be implicitly represented with a maximum set-bit width of 8.", statement, token.tokenNumber());
+    throw NumericalError("IMMEDIATE value '" + token.value() + "' (decimal " + std::to_string(imm) + ") cannot be implicitly represented with a maximum set-bit width of 8.", _statement, token.tokenNumber());
 
   if (topbit > bits) { 
     imm = std::rotr((uint32_t)imm, topbit - 7);
@@ -142,7 +142,7 @@ std::tuple<std::string, std::string, std::string> InstructionNode::splitOpCode(l
   std::string forceFlags[] = {"cmp", "cmn", "tst", "teq"};    // operations that always set flags regardless of modifier value
 
   using namespace lexer;
-  std::map<std::string, TOKEN>::iterator it = std::find_if(operations.begin(), operations.end(), [token](const std::pair<std::string, TOKEN> op){ return token.value().substr(0, op.first.size()) == op.first; });
+  std::map<std::string, TOKEN>::reverse_iterator it = std::find_if(operations.rbegin(), operations.rend(), [token](const std::pair<std::string, TOKEN> op){ return token.value().substr(0, op.first.size()) == op.first; });
   operation = it->first;
 
   std::string suffix = token.value().substr(operation.size(), token.value().size());
@@ -163,19 +163,24 @@ std::tuple<std::string, std::string, std::string> InstructionNode::splitOpCode(l
  * Responsible for parsing and delegating parsing of branch instructions B, BL and BX
  */
 BranchNode::BranchNode(std::vector<lexer::Token> statement) : InstructionNode(statement) {
+  std::cout << "parsing branch" << std::endl;
+
   auto [operation, modifier, condition] = splitOpCode(nextToken());
   this->_op = opMap[operation];
   this->_setFlags = false;
   this->_cond = condMap[condition];
 
 
-  try { this->_Rd = parseRegister(peekToken()); }               // attempt to parse as register by peeking at the next token
-  catch(SyntaxError e) {  }                                     // catch and carry on if syntax error
+  if (peekToken().type() == lexer::REGISTER) 
+    this->_Rd = parseRegister(peekToken());
+
+  else if (peekToken().type() == lexer::OP_LABEL) 
+    this->_Rd = peekToken().value().substr(0, peekToken().value().size());
+
+  else throw SyntaxError("Expected either REGISTER or LABEL value - received " + lexer::tokenNames[peekToken().type()] + " '" + peekToken().value() + "' instead.", statement, currentToken);
   
-  if (this->_Rd.index() == 0) {
-    if (peekToken().type() == lexer::LABEL) this->_Rd = nextToken().value();
-    else throw SyntaxError("Expected either REGISTER or LABEL value - received " + lexer::tokenNames[peekToken().type()] + " '" + peekToken().value() + "' instead.", statement, currentToken);
-  }
+  nextToken();
+  if (hasToken()) throw SyntaxError("Unexpected token '" + peekToken().value() + "' after valid instruction end.", statement, peekToken().tokenNumber());
 }
 
 std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, int>>> BranchNode::assemble() {
@@ -253,7 +258,7 @@ std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, int>>> BiO
         explanation.push_back({"Optional Shift Operation", shiftTitle[shiftOp], 2});
         explanation.push_back({"Optional Shift Type", "The flexible operand is optionally shifted by an immediate value.", 1});
       }
-      else throw AssemblyError("Optional shift operand Rs is neither a REGISTER nor IMMEDIATE value. Most likely a parser bug.", statement);
+      else throw AssemblyError("Optional shift operand Rs is neither a REGISTER nor IMMEDIATE value. Most likely a parser bug.", _statement);
     }
     else {                                                                                      // operand is not optionally shifted
       instruction <<= 8;
@@ -264,7 +269,7 @@ std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, int>>> BiO
     instruction = (instruction << 4) | reg;
     explanation.push_back({"Flexible Operand", regTitle[reg] + ". This operand has special properties in ARMv7. It can be either an immediate value or an optionally shifted register.", 4});
   }
-  else throw AssemblyError("Source operand Rm is neither a REGISTER nor IMMEDIATE value. This is most likely a parser bug.", statement);
+  else throw AssemblyError("Source operand Rm is neither a REGISTER nor IMMEDIATE value. This is most likely a parser bug.", _statement);
 
   return {instruction, explanation};
 }
@@ -342,7 +347,7 @@ std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, int>>> Tri
         explanation.push_back({"Optional Shift Operation", shiftTitle[shiftOp], 2});
         explanation.push_back({"Optional Shift Type", "The flexible operand is optionally shifted by an immediate value.", 1});
       }
-      else throw AssemblyError("Optional shift operand Rs is neither a REGISTER nor IMMEDIATE value. Most likely a parser bug.", statement);
+      else throw AssemblyError("Optional shift operand Rs is neither a REGISTER nor IMMEDIATE value. Most likely a parser bug.", _statement);
     }
     else {                                                                                      // operand is not optionally shifted
       instruction <<= 8;
@@ -353,7 +358,7 @@ std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, int>>> Tri
     instruction = (instruction << 4) | reg;
     explanation.push_back({"Flexible Operand", regTitle[reg] + ". This operand has special properties in ARMv7. It can be either an immediate value or an optionally shifted register.", 4});
   }
-  else throw AssemblyError("Source operand Rm is neither a REGISTER nor IMMEDIATE value. This is most likely a parser bug.", statement);
+  else throw AssemblyError("Source operand Rm is neither a REGISTER nor IMMEDIATE value. This is most likely a parser bug.", _statement);
 
   return {instruction, explanation};
 }
@@ -387,7 +392,7 @@ std::variant<std::monostate, REGISTER, int> ShiftNode::parseRegOrImm() {
   }
 
   if (flex.index() == 0)
-    throw SyntaxError("Expected either REGISTER or IMMEDIATE value - received " + lexer::tokenNames[peekToken().type()] + " '" + peekToken().value() + "' instead.", statement, currentToken); 
+    throw SyntaxError("Expected either REGISTER or IMMEDIATE value - received " + lexer::tokenNames[peekToken().type()] + " '" + peekToken().value() + "' instead.", _statement, currentToken); 
   
   nextToken();                                              // advance token because currently only peeked
   return flex;
@@ -416,7 +421,7 @@ void FlexOperand::parseShift() {
   parseComma(nextToken());
   if (peekToken().type()== lexer::SHIFT)
     this->_shift = shiftMap[nextToken().value()];
-  else throw SyntaxError("The comma after the final operand indicates an optional shift, but no shift was found.", statement, currentToken);
+  else throw SyntaxError("The comma after the final operand indicates an optional shift, but no shift was found.", _statement, currentToken);
 
   this->_Rs = parseRegOrImm(5);     // parse immediate with a max length of 5 bits
 }
@@ -439,8 +444,88 @@ std::variant<std::monostate, REGISTER, int> FlexOperand::parseRegOrImm(unsigned 
   }
 
   if (flex.index() == 0)
-    throw SyntaxError("Expected either REGISTER or IMMEDIATE value - received " + lexer::tokenNames[peekToken().type()] + " '" + peekToken().value() + "' instead.", statement, currentToken); 
+    throw SyntaxError("Expected either REGISTER or IMMEDIATE value - received " + lexer::tokenNames[peekToken().type()] + " '" + peekToken().value() + "' instead.", _statement, currentToken); 
   
   nextToken();                                                    // advance token because currently only peeked
   return flex;
+}
+
+
+/**
+ * Node which holds a section change declaration
+ */
+DirectiveNode::DirectiveNode(std::vector<lexer::Token> statement) : Node(statement) {
+  if (directiveMap.contains(peekToken().value())) {
+    this->directive = directiveMap.at(nextToken().value());
+  }
+  else throw SyntaxError("Unrecognised directive '" + peekToken().value() + "'.", statement, peekToken().tokenNumber());
+  
+  if (hasToken()) throw SyntaxError("Unexpected token '" + peekToken().value() + "' after valid section declaration end.", statement, peekToken().tokenNumber());
+}
+
+
+AllocationNode::AllocationNode(std::vector<lexer::Token> statement) : Node(statement) {
+  this->_identifier = peekToken().value().substr(0, nextToken().value().size() - 1);
+
+  lexer::Token typeDirective = nextToken();
+  int type = syntax::typeMap.at(typeDirective.value()).index();
+  if (type == 0) {         // .skip
+    this->_value.emplace<size_t>(parseImmediate(makeImmediate(nextToken()), 32));
+  }
+  else if (type == 1) {    // .byte
+    this->_value.emplace<uint8_t>(parseImmediate(makeImmediate(nextToken()), 8));
+  }
+  else if (type == 2) {    // .hword
+    this->_value.emplace<uint16_t>(parseImmediate(makeImmediate(nextToken()), 16));
+  }
+  else if (type == 3) {    // .word
+    this->_value.emplace<uint32_t>(parseImmediate(makeImmediate(nextToken()), 32));
+  }
+  else if (type == 4) {    // .asciz, .ascii, .string
+    if (peekToken().type() != lexer::STRING) 
+      throw SyntaxError("Expected STRING value for type directive '" + typeDirective.value() + "' - received " + lexer::tokenNames[peekToken().type()] + " '" + peekToken().value() + "' instead.", statement, currentToken); 
+
+    std::string str = nextToken().value();
+    this->_value.emplace<std::string>(str.substr(str.find_first_of("\"") + 1, str.find_last_of("\"") - 1));
+  }
+
+  if (hasToken()) throw SyntaxError("Unexpected token '" + peekToken().value() + "' after valid data declaration end.", statement, peekToken().tokenNumber());
+}
+
+lexer::Token AllocationNode::makeImmediate(lexer::Token token) {
+  if (token.type() == lexer::BIN) return lexer::Token(lexer::IMM_BIN, token.value(), token.lineNumber(), token.tokenNumber());
+  if (token.type() == lexer::OCT) return lexer::Token(lexer::IMM_OCT, token.value(), token.lineNumber(), token.tokenNumber());
+  if (token.type() == lexer::DEC) return lexer::Token(lexer::IMM_DEC, token.value(), token.lineNumber(), token.tokenNumber());
+  if (token.type() == lexer::HEX) return lexer::Token(lexer::IMM_HEX, token.value(), token.lineNumber(), token.tokenNumber());
+  return token;
+}
+
+std::string AllocationNode::printValue() const {
+  int type = _value.index();
+  if (type == 0) {         // .skip
+    size_t size = std::get<0>(_value);
+    return std::to_string(size * 4) + " bytes of space";
+  }
+  else if (type == 1) {    // .byte
+    uint8_t byte = std::get<1>(_value);
+    return std::to_string(byte) + " as a byte";
+  }
+  else if (type == 2) {    // .hword
+    uint16_t hword = std::get<2>(_value);
+    return std::to_string(hword) + " as a halfword";
+  }
+  else if (type == 3) {    // .word
+    uint32_t word = std::get<3>(_value);
+    return std::to_string(word) + " as a word";
+  }
+  else return std::get<4>(_value);
+}
+
+/**
+ * Node which holds a label indicating a named point in the program which can be branched to
+ */
+LabelNode::LabelNode(std::vector<lexer::Token> statement) : Node(statement) {
+  this->_identifier = peekToken().value().substr(0, nextToken().value().size() - 1);
+
+  if (hasToken()) throw SyntaxError("Unexpected token '" + peekToken().value() + "' after valid data declaration end.", statement, peekToken().tokenNumber());
 }

@@ -17,6 +17,7 @@ namespace lexer {
   enum TOKEN {
     // general
     LABEL = 0,    
+    DIRECTIVE,
 
     // operations - reduced for now
     BRANCH,
@@ -33,6 +34,13 @@ namespace lexer {
     IMM_HEX,
     VARIABLE,
     OP_LABEL,
+
+    // .data section values
+    STRING,
+    BIN,
+    OCT,
+    DEC,
+    HEX,
 
     // punctuation
     COMMA,
@@ -70,6 +78,8 @@ namespace lexer {
 
     std::string tokenNames[] = {
       "LABEL",
+      "DIRECTIVE",
+
       "BRANCH",
       "BI_OPERAND",
       "TRI_OPERAND",
@@ -83,6 +93,12 @@ namespace lexer {
       "IMM_HEX",
       "VARIABLE",
       "OP_LABEL",
+
+      "STRING",
+      "BIN",
+      "OCT",
+      "DEC",
+      "HEX",
 
       "COMMA",
       "OPEN_SQR",

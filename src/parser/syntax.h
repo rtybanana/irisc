@@ -22,12 +22,15 @@ namespace syntax {
       Node();
       Node(std::vector<lexer::Token>);
       Node(std::vector<lexer::Token>, unsigned int);
+      std::vector<lexer::Token> statement() const { return _statement; };
+      // FAMILY family() const { return _family; };
       std::string toString();
       virtual ~Node();
 
     protected:
-      std::vector<lexer::Token> statement;
+      std::vector<lexer::Token> _statement;
       unsigned int currentToken = 0;
+      // FAMILY _family;
       lexer::Token nextToken();
       lexer::Token peekToken();
       bool hasToken();
@@ -60,9 +63,10 @@ namespace syntax {
     public:
       BranchNode(std::vector<lexer::Token>);
       std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, int>>> assemble() override;
+      std::tuple<OPERATION, CONDITION, std::variant<REGISTER, std::string>> unpack() const { return {_op, _cond, _Rd}; };
 
     protected:
-      std::variant<std::monostate, REGISTER, std::string> _Rd;
+      std::variant<REGISTER, std::string> _Rd;
       uint32_t _offset;
   };
 
@@ -157,6 +161,40 @@ namespace syntax {
 
     private:
       std::variant<std::monostate, REGISTER, int> parseRegOrImm();
+  };
+
+  // Node which contains heap allocation information for user defined variables
+  class DirectiveNode : public Node {
+    public:
+      DirectiveNode(std::vector<lexer::Token>);
+      DIRECTIVE directive;
+      bool isText() const { return directive == TEXT; };
+      bool isData() const { return directive == DATA; };  
+      bool isGlobal() const { return directive == GLOBAL; };     
+  };
+
+  // Node which contains heap allocation information for user defined variables
+  class AllocationNode : public Node {
+    public:
+      AllocationNode(std::vector<lexer::Token>);
+      std::string identifier() const { return _identifier; };
+      std::variant<size_t, uint8_t, uint16_t, uint32_t, std::string> value() const { return _value; };
+      std::string printValue() const;
+      
+    protected:
+      std::string _identifier;
+      std::variant<size_t, uint8_t, uint16_t, uint32_t, std::string> _value;
+      lexer::Token makeImmediate(lexer::Token);
+  };
+
+  // Node which contains heap allocation information for user defined variables
+  class LabelNode : public Node {
+    public:
+      LabelNode(std::vector<lexer::Token>);
+      std::string identifier() const { return _identifier; };
+      
+    protected:
+      std::string _identifier;
   };
 }
 

@@ -39,8 +39,8 @@ TOKEN Token::tokenType(int final_state, std::string &value) {
   switch(final_state) {
     case 1: {
       TOKEN token;
-      std::map<std::string, TOKEN>::iterator it = std::find_if(operations.begin(), operations.end(), [value](const std::pair<std::string, TOKEN> op){ return value.substr(0, op.first.size()) == op.first; });
-      if (it != operations.end()) {
+      std::map<std::string, TOKEN>::reverse_iterator it = std::find_if(operations.rbegin(), operations.rend(), [value](const std::pair<std::string, TOKEN> op){ return value.substr(0, op.first.size()) == op.first; });
+      if (it != operations.rend()) {
         std::string operation = it->first;
         token = it->second;
 
@@ -51,7 +51,7 @@ TOKEN Token::tokenType(int final_state, std::string &value) {
           
           if (suffix.size() == 0 || std::any_of(conditions.begin(), conditions.end(), [suffix](const std::string s){ return s == suffix; })) {
             if ( token == LOAD_STORE && std::any_of(sizes.begin(), sizes.end(), [modifier](const char c){ return c == modifier; }) ||
-                  token == BRANCH && std::any_of(modifiers.begin(), modifiers.end(), [modifier](const char c){ return c == modifier; }) ||
+                 token == BRANCH && std::any_of(modifiers.begin(), modifiers.end(), [modifier](const char c){ return c == modifier; }) ||
                 (token == BI_OPERAND || token == TRI_OPERAND) && modifier == 's') {
               return token;
             }
@@ -74,9 +74,13 @@ TOKEN Token::tokenType(int final_state, std::string &value) {
     case 2:                       // fall through
       if (value[0] == '=')
         return VARIABLE;
+      if (value[0] == '.')
+        return DIRECTIVE;
       return OP_LABEL;
     case 3:
-      if (value[0] == '=') 
+      if (value[0] == '"')
+        return STRING;
+      if (value[0] == '=' || value[0] == '.') 
         return ERROR;
       return LABEL;
     case 4:
@@ -84,14 +88,20 @@ TOKEN Token::tokenType(int final_state, std::string &value) {
         return IMM_DEC;
       if (value[0] == 'r' || value[0] == 'R')
         return REGISTER;
-      return ERROR;
+      return DEC;
     case 6:
-      return IMM_OCT;
+      if (value[0] == '#')
+        return IMM_OCT;
+      return OCT;
     case 7:
-      return IMM_HEX;
+      if (value[0] == '#')
+        return IMM_HEX;
+      return HEX;
     case 8:
-      return IMM_BIN;
-    case 9:
+      if (value[0] == '#')
+        return IMM_BIN;
+      return BIN;
+    case 10:
       if (value == "[")
         return OPEN_SQR;
       if (value == "]")

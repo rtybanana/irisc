@@ -41,6 +41,11 @@ namespace vm {
             container->updateReg(index, value);
             return *this; 
           };
+          proxy& operator+=(const uint32_t _value) {
+            this->value += _value;
+            container->updateReg(index, value);
+            return *this;
+          }
           operator int() { return value; };
           friend std::ostream& operator<<(std::ostream& os, const proxy& p) { os << p.value; return os; };
       };

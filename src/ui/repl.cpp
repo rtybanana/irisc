@@ -156,6 +156,16 @@ void REPL::fetchTokens() {
 		}
 	}
 
+	for (auto const& [op, i] : syntax::shiftMap) {
+		ops.push_back(op);
+		for (auto flag : {"", "s"}) {
+			for (auto const& [cond, i] : syntax::condMap) {
+				complexOps.push_back(op + flag + cond);
+				highlights.push_back({op + flag + cond, replxx::Replxx::Color::BRIGHTRED});
+			}
+		}
+	}
+
 	for (auto const& [reg, i] : syntax::regMap) {
 		regs.push_back(reg);
 		highlights.push_back({reg, replxx::Replxx::Color::BRIGHTBLUE});
@@ -163,7 +173,7 @@ void REPL::fetchTokens() {
 }
 
 void REPL::loop(vm::Emulator &emulator) {
-	Editor editor;
+	Editor editor(emulator);
 	std::cout << "\e[1miRISC\e[0m 0.0.1  [22nd Nov, 2020]" << std::endl;
   std::cout << "Type \":h\" for more information.\n" << std::endl;
 
@@ -241,13 +251,7 @@ void REPL::loop(vm::Emulator &emulator) {
 
 		// Parse as assembler
 		else {
-			try {
-				lexer::Lexer lexer(input);
-				parser::Parser parser(lexer);
-				syntax::InstructionNode* node = parser.parseSingle();
-				// auto [instruction, explanation] = node->assemble();
-				if (node != nullptr) emulator.execute(node);
-			}
+			try { emulator.execute(input); }
 			
 			// Catch exception and print error
 			catch(const std::exception &e) {

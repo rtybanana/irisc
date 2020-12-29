@@ -21,62 +21,62 @@ Registers::Registers() : registers {}, labels {}, cpsr {}, flags {} {
   for (int i = 0; i < registers.size(); i++) registers[i] = proxy(this, i);
 
   Fl::lock();
-    window = new Fl_Window(220,540,"Registers");
+    window = new Fl_Window(240,540,"Registers");
     for(auto const& [name, index] : syntax::regMap){
       Fl_Box* reg = new Fl_Box(10, 10+(25*index), 30, 25, name.c_str());
       reg->box(FL_UP_BOX);
       reg->labelfont(FL_BOLD);
-      reg->labelsize(12);
+      reg->labelsize(13);
 
-      Fl_Box* val = new Fl_Box(40, 10+(25*index), 170, 25);
+      Fl_Box* val = new Fl_Box(40, 10+(25*index), 190, 25);
       val->copy_label(regstr(registers[index]).c_str());
       val->box(FL_UP_BOX);
       val->labelfont(FL_COURIER);
       val->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
-      val->labelsize(12);
+      val->labelsize(13);
 
       labels[index] = val;
 
       // explain on hover
       syntax::REGISTER r = static_cast<syntax::REGISTER>(index);
-      widgets::HoverBox* hover = new widgets::HoverBox(10, 10+(25*index), 200, 25, syntax::regTitle[r], syntax::regExplain[r] + "\nDecimal value: 0\nHex value: 0x0");
+      widgets::HoverBox* hover = new widgets::HoverBox(10, 10+(25*index), 220, 25, syntax::regTitle[r], syntax::regExplain[r] + "\nDecimal value: 0\nHex value: 0x0");
       hover->callback(hover_cb, this);
     }
 
-    Fl_Box* flagstitle = new Fl_Box(10, 415, 80, 25, "CPSR");
+    Fl_Box* flagstitle = new Fl_Box(10, 415, 100, 25, "CPSR");
     flagstitle->box(FL_UP_BOX);
     flagstitle->labelfont(FL_BOLD);
-    flagstitle->labelsize(12);
+    flagstitle->labelsize(13);
 
-    widgets::HoverBox* flagshover = new widgets::HoverBox(10, 415, 80, 25, "CPSR Flags", "Four bits in the Current Program Status Register which are used to decide whether an instruction should execute.");
+    widgets::HoverBox* flagshover = new widgets::HoverBox(10, 415, 100, 25, "CPSR Flags", "Four bits in the Current Program Status Register which are used to decide whether an instruction should execute.");
     flagshover->callback(hover_cb, this);
 
     for (int i = 0; i < 4; i++) {
       FLAG f = static_cast<FLAG>(i);
-      Fl_Box* flagname = new Fl_Box(90 + (i * 30), 415, 30, 25, flagShortName[f].c_str());
+      Fl_Box* flagname = new Fl_Box(110 + (i * 30), 415, 30, 25, flagShortName[f].c_str());
       flagname->align(FL_ALIGN_LEFT_BOTTOM | FL_ALIGN_INSIDE);
       flagname->labelfont(FL_BOLD);
-      flagname->labelsize(8);
+      flagname->labelsize(9);
 
-      Fl_Box* flag = new Fl_Box(90 + (i * 30), 415, 30, 25, "0");
+      Fl_Box* flag = new Fl_Box(110 + (i * 30), 415, 30, 25, "0");
       flag->labelfont(FL_COURIER);
-      flag->labelsize(12);
+      flag->labelsize(14);
       flags[i] = flag;
 
       // explain on hover
-      widgets::HoverBox* hover = new widgets::HoverBox(90 + (i * 30), 415, 30, 25, flagTitle[f], flagExplain[f]);
+      widgets::HoverBox* hover = new widgets::HoverBox(110 + (i * 30), 415, 30, 25, flagTitle[f], flagExplain[f]);
       hover->callback(hover_cb, this);
     }
 
-    Fl_Box* explanation = new Fl_Box(10, 445, 200, 85);
+    Fl_Box* explanation = new Fl_Box(10, 445, 220, 85);
     explanation->box(FL_UP_BOX);
-    _title = new Fl_Box(10, 445, 200, 20);
+    _title = new Fl_Box(10, 445, 220, 20);
     _title->labelfont(FL_BOLD);
-    _title->labelsize(12);
+    _title->labelsize(13);
     _title->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
-    _details = new Fl_Box(10, 465, 200, 60);
+    _details = new Fl_Box(10, 465, 220, 60);
     _details->align(FL_ALIGN_LEFT_BOTTOM | FL_ALIGN_INSIDE | FL_ALIGN_WRAP);
-    _details->labelsize(12);
+    _details->labelsize(13);
 
     describe("Registers", "A simplified view of the data currently stored in the CPU. Hover over the different sections to learn what they are.");
 
@@ -142,8 +142,8 @@ void Registers::setFlags(uint32_t op1, uint32_t op2, uint64_t result, char _oper
 
   // std::cout << std::bitset<33>(result) << std::endl;
 
-  std::cout << "\n" << "sign1: " << sign1 << ", sign2: " << sign2 << ", signr: " << signr << ", operator: " << _operator << std::endl;
-  std::cout << result_ext[32] << " " << std::bitset<32>(result) << std::endl;
+  // std::cout << "\n" << "sign1: " << sign1 << ", sign2: " << sign2 << ", signr: " << signr << ", operator: " << _operator << std::endl;
+  // std::cout << result_ext[32] << " " << std::bitset<32>(result) << std::endl;
 
   cpsr[N] = result_ext[31] == 1;                      // msb = 1
   cpsr[Z] = (uint32_t)result == 0;                    // all bits = 0
@@ -152,14 +152,14 @@ void Registers::setFlags(uint32_t op1, uint32_t op2, uint64_t result, char _oper
   if (_operator == '+') cpsr[V] = sign1 == sign2 && sign1 != signr;         // two operands of the same sign result in changed sign
   else if (_operator == '-') cpsr[V] = sign1 != sign2 && sign2 == signr;    // signs different and result sign same as subtrahend
   
-  std::cout << "  negative flag: " << cpsr[N] << "\n"
-            << "  zero flag: " << cpsr[Z] << "\n"
-            << "  carry flag: " << cpsr[C] << "\n"
-            << "  overflow flag: " << cpsr[V] << std::endl;
+  // std::cout << "  negative flag: " << cpsr[N] << "\n"
+  //           << "  zero flag: " << cpsr[Z] << "\n"
+  //           << "  carry flag: " << cpsr[C] << "\n"
+  //           << "  overflow flag: " << cpsr[V] << std::endl;
 
   Fl::lock();
     for (int flag : {N, Z, C, V}) {
-      std::cout << std::to_string(cpsr[flag]).c_str() << std::endl;
+      // std::cout << std::to_string(cpsr[flag]).c_str() << std::endl;
       flags[flag]->copy_label(std::to_string(cpsr[flag]).c_str());
       flags[flag]->redraw();
     }

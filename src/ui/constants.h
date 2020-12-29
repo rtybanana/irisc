@@ -16,7 +16,7 @@
 
 namespace ui {
   static std::vector<std::string> directives {
-    ".text", ".data", ".global", ".asciiz", ".word", ".skip"
+    ".text", ".data", ".global", ".asciz", ".word", ".skip"
   };
 
   using cl = replxx::Replxx::Color;
@@ -33,14 +33,14 @@ namespace ui {
 
   // Style table
   static Fl_Text_Display::Style_Table_Entry styles[] = {
-    // FONT COLOR      FONT FACE   FONT SIZE
-    // --------------- ----------- --------------
-    { FL_WHITE,       FL_COURIER, 15 }, // A - default
-    { red,            FL_COURIER, 15 }, // B - Red
-    { blue,           FL_COURIER, 15 }, // C - Blue
-    { FL_MAGENTA,     FL_COURIER, 15 }, // D - Magenta
-    { FL_DARK_YELLOW, FL_COURIER, 15 }, // E - Yellow
-    { FL_DARK_GREEN,  FL_COURIER, 15 }, // F - Green
+  //  FONT COLOR        FONT FACE     FONT SIZE
+  //  ----------------- ------------- --------------
+    { FL_WHITE,         FL_COURIER,   20 },   // A - default
+    { red,              FL_COURIER,   20 },   // B - Red
+    { blue,             FL_COURIER,   20 },   // C - Blue
+    { FL_MAGENTA,       FL_COURIER,   20 },   // D - Magenta
+    { FL_DARK_YELLOW,   FL_COURIER,   20 },   // E - Yellow
+    { FL_DARK_GREEN,    FL_COURIER,   20 },   // F - Green
   };
 
   // static std::map<std::string, char> styleMap = {

@@ -9,18 +9,20 @@
 using namespace lexer;
 
 Lexer::Lexer(std::string& program) {
-    unsigned int current_index = 0;
-    unsigned int tokenIndex = 0;
+  unsigned int current_index = 0;
+  unsigned int tokenIndex = 0;
+  unsigned int lineIndex = 1;
 
-    // Tokenise the program, ignoring comments
-    Token t;
-    while(current_index <= program.length() && program.substr(current_index, program.size()).find_first_not_of('\0') != std::string::npos) {
-      if (hasToken(program, current_index)) {
-        t = nextToken(program, current_index, tokenIndex);
-        tokens.push_back(t);
-      }
+  // Tokenise the program, ignoring comments
+  Token t;
+  while(current_index <= program.length() && program.substr(current_index, program.size()).find_first_not_of('\0') != std::string::npos) {
+    if (hasToken(program, current_index)) {
+      t = nextToken(program, current_index, tokenIndex, lineIndex);
+
+      if (t.type() == END) lineIndex++;
+      tokens.push_back(t);
     }
-    if (!tokens.empty()) tokens.push_back(Token(END, "", 0, tokenIndex));    // adding final END token
+  }
 }
 
 Lexer::~Lexer() = default;
@@ -49,15 +51,14 @@ std::vector<Token> Lexer::getTokens() {
 }
 
 bool Lexer::hasToken(std::string &program, unsigned int &current_index) {
-  while(current_index < program.length() &&
-       (program[current_index] == ' ' || program[current_index] == '\n' ))
+  while(current_index < program.length() && (program[current_index] == ' ' || program[current_index] == '\t'))
     current_index++;
 
   if (current_index == program.length()) return false;
   return true;
 }
 
-Token Lexer::nextToken(std::string &program, unsigned int &current_index, unsigned int &tokenIndex) {
+Token Lexer::nextToken(std::string &program, unsigned int &current_index, unsigned int &tokenIndex, unsigned int &lineIndex) {
 
     // Setup stack and lexeme
     int current_state = 0;
@@ -89,9 +90,13 @@ Token Lexer::nextToken(std::string &program, unsigned int &current_index, unsign
       // Go to next state using delta function in DFA
       current_state = nextState(current_state, current_symbol);
 
+      // std::cout << "[" << current_symbol << ", " << current_state << "]" << ", ";
+
       // Update current index for next iteration
       current_index++;
     }
+
+    // std::cout << std::endl;
 
     // Rollback loop
     int errorIndex = current_index - 2;
@@ -115,7 +120,7 @@ Token Lexer::nextToken(std::string &program, unsigned int &current_index, unsign
     }
 
     if(current_state >= 0 && f_states[current_state]) {
-      return Token(current_state, std::move(lexeme), 0, tokenIndex++);
+      return Token(current_state, std::move(lexeme), lineIndex, tokenIndex++);
     }
     else {
       throw LexicalError("Starting character is not recognised.", program, errorIndex);
@@ -131,6 +136,10 @@ int Lexer::nextState(int s, char sigma) {
     switch(sigma){
       case '#':
         return t_table[HASHTAG][s];
+      case '.':
+        return t_table[DOT][s];
+      case '"':
+        return t_table[SPEECH][s];
       case '=':
         return t_table[EQUALS][s];
       case 'b':
@@ -176,7 +185,6 @@ int Lexer::nextState(int s, char sigma) {
         if (((0x47 <= ascii) && (ascii <= 0x5A)) ||
           ((0x67 <= ascii) && (ascii <= 0x7A)))
           return t_table[G_TO_Z][s];
-
 
         // all else
         return t_table[OTHER][s];

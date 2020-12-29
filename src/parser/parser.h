@@ -22,7 +22,8 @@ namespace parser {
       // lexer::Token nextToken;
       // void advanceToken();
 
-      syntax::InstructionNode* parseSingle();
+      syntax::Node* parseSingle();
+      std::vector<syntax::Node*> parseMultiple();
     
     // private:
     //   syntax::Node parseSingle();
