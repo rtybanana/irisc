@@ -1,4 +1,5 @@
 #include "hoverbox.h"
+#include "../emulator/gui/constants.h"
 #include <FL/Fl.H>
 
 using namespace widgets;
@@ -7,9 +8,10 @@ HoverBox::HoverBox(int x, int y, int w, int h, std::string title, std::string de
   Fl_Box(x, y, w, h, l),
   _title(title),
   _detail(detail),
-  _color(FL_MAGENTA),
+  _color(FL_YELLOW),
   _hovering(false) {
-    this->box(FL_UP_FRAME);
+    this->box(FL_BORDER_FRAME);
+    this->color(vm::grey);
   }
 
 int HoverBox::handle(int event) {
@@ -32,10 +34,13 @@ int HoverBox::handle(int event) {
 void HoverBox::highlight(Fl_Color color) {
   Fl::lock();
     if (color != 0) {
-      this->box(FL_BORDER_FRAME);
+      // this->box(FL_BORDER_FRAME);
       this->color(color);
     }
-    else this->box(FL_UP_FRAME);
+    else {
+      // this->box(FL_BORDER_FRAME);
+      this->color(vm::grey);
+    }
     this->redraw();
     this->redraw_label();
   Fl::unlock();

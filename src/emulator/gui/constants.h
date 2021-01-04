@@ -5,26 +5,29 @@
  * @date 20/11/20
  */
 
-#ifndef IRISC_UI_CONSTANTS_H
-#define IRISC_UI_CONSTANTS_H
+#ifndef IRISC_GUI_CONSTANTS_H
+#define IRISC_GUI_CONSTANTS_H
 
 #include <map>
 #include <vector>
 #include <FL/Fl_Text_Display.H>
 #include <FL/Fl.H>
+#include <FL/fl_ask.H>
 #include "replxx.hxx"
 
-namespace ui {
+namespace vm {
+
+  static void close_cb(Fl_Widget *widget, void *) {
+    int result = fl_choice("Are you sure you want to exit?", "Yes", "No", 0);
+    if (result == 0) Fl::awake(new int(0));
+  }
+
   static std::vector<std::string> directives {
     ".text", ".data", ".global", ".asciz", ".word", ".skip"
   };
 
-  using cl = replxx::Replxx::Color;
-  static std::vector<std::pair<std::string, cl>> regex_color {
-    {"#((0x([0-9]|[a-f])+)|(0b([0-1]+))|((0d)?[0-9]+))", cl::GRAY},
-    {"\\.[A-Za-z]+", cl::BRIGHTMAGENTA}
-  };
   
+  static Fl_Color darker = fl_rgb_color(uchar(20));
   static Fl_Color dark = fl_rgb_color(uchar(35));
   static Fl_Color grey = fl_rgb_color(uchar(175));
   static Fl_Color light = fl_rgb_color(uchar(225));
@@ -50,4 +53,4 @@ namespace ui {
 }
 
 
-#endif //IRISC_UI_CONSTANTS_H
+#endif //IRISC_GUI_CONSTANTS_H

@@ -1,5 +1,5 @@
 #include "instruction.h"
-#include "gui.h"
+#include "constants.h"
 #include <FL/Fl.H>
 #include <sstream>
 #include <iostream>
@@ -16,48 +16,57 @@ static void hover_cb(Fl_Widget* widget, void* window) {
     instruction->describe("Assembled Instruction", "This is the assembled machine code for last instruction, hover over the different sections to see what they mean.");
 }
 
-Instruction::Instruction() {
+Instruction::Instruction(int x, int y) : Fl_Group(x, y, 500, 160) {
   Fl::lock();
-    window = new Fl_Window(500, 160, "Machine Code");
+    // window = new Fl_Window(500, 160, "Machine Code");
 
     // Fl_Box* sharedStatus = new Fl_Box(10, 10, 480, 26, "Status: ");
     // sharedStatus->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
     line = new Fl_Box(10, 10, 480, 26, "No Instruction");
     line->labelfont(FL_BOLD);
-    line->labelsize(15);
+    line->labelsize(16);
+    line->labelcolor(FL_WHITE);
     line->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
 
     status = new Fl_Box(10, 10, 480, 26, "N/A");
     status->labelfont(FL_BOLD);
-    status->labelsize(15);
+    status->labelsize(16);
+    status->labelcolor(FL_WHITE);
     status->align(FL_ALIGN_RIGHT | FL_ALIGN_INSIDE);
 
-    Fl_Box* boundary = new Fl_Box(10, 41, 480, 26);
-    boundary->box(FL_UP_BOX);
+    Fl_Box* binary = new Fl_Box(10, 40, 480, 25);
+    Fl_Box* boundary = new Fl_Box(10, 40, 480, 25);
+    binary->box(FL_FLAT_BOX);
+    binary->color(vm::darker);
+    boundary->box(FL_BORDER_FRAME);
+    boundary->color(vm::grey);
 
     for(int i = 0; i < 32; i++){
-      Fl_Box* bit = new Fl_Box(10+(15*i), 41, 15, 26, "0");
+      Fl_Box* bit = new Fl_Box(10+(15*i), 40, 15, 25, "0");
       bit->labelfont(FL_COURIER);
+      bit->labelcolor(FL_WHITE);
       bit->labelsize(16);
 
       bits[i] = bit;
     }
 
-    Fl_Box* explanation = new Fl_Box(10, 72, 480, 78);
-    explanation->box(FL_UP_BOX);
-    _title = new Fl_Box(10, 72, 480, 26);
+    Fl_Box* explanation = new Fl_Box(10, 75, 480, 100);
+    explanation->box(FL_BORDER_FRAME);
+    _title = new Fl_Box(10, 75, 480, 20);
     _title->labelfont(FL_BOLD);
+    _title->labelcolor(FL_WHITE);
     _title->labelsize(15);
     _title->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
-    _details = new Fl_Box(10, 98, 480, 52);
+    _details = new Fl_Box(10, 100, 480, 75);
+    _details->labelcolor(FL_WHITE);
     _details->labelsize(15);
     _details->align(FL_ALIGN_LEFT_BOTTOM | FL_ALIGN_INSIDE | FL_ALIGN_WRAP);
 
     describe("No Instruction", "Execute an instruction to examine its machine code.");
 
-    window->end();
-    window->callback(gui::close_cb);
-    window->show();
+    end();
+    // window->callback(gui::close_cb);
+    // window->show();
   Fl::unlock();
 
   Fl::awake();
@@ -78,26 +87,29 @@ void Instruction::set(syntax::InstructionNode* instruction, bool executed) {
     }
 
     for (widgets::HoverBox* region : regions) {
-      window->remove(region);
+      remove(region);
       delete region;
     }
     regions.clear();
 
     for (int i = 0; i < bits.size(); i++) bits[i]->copy_label(std::to_string(machinecode[31 - i]).c_str()); 
 
-    window->begin();
+    begin();
     int offset = 0;
     for (auto [title, detail, range] : explanation) {
-      widgets::HoverBox* region = new widgets::HoverBox(10+(15*offset), 41, 15*range, 26, title, detail);
-      // region->box(FL_UP_FRAME);
-      // region->color(FL_BLACK);
+      widgets::HoverBox* region = new widgets::HoverBox(x() + 10+(15*offset), y() + 40, 15*range, 25, title, detail);
       region->callback(hover_cb, this);
+
       regions.push_back(region);
       offset += range;
     }
+    end();
+
+    // redraw();
+    // draw_children();
 
     describe("Assembled Instruction", "This is the assembled machine code for last instruction, hover over the different sections to see what they mean.");
-    window->end();
+    // redraw();
   Fl::unlock();
 
   Fl::awake();

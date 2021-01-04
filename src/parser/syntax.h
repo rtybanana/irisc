@@ -10,6 +10,7 @@
 
 #include "../lexer/token.h"
 #include "../lexer/lexer.h"
+#include "../error.h"
 #include "constants.h"
 #include <vector>
 #include <map>
@@ -23,6 +24,7 @@ namespace syntax {
       Node(std::vector<lexer::Token>);
       Node(std::vector<lexer::Token>, unsigned int);
       std::vector<lexer::Token> statement() const { return _statement; };
+      int lineNumber() const { return _statement[0].lineNumber(); };
       // FAMILY family() const { return _family; };
       std::string toString();
       virtual ~Node();
@@ -195,6 +197,16 @@ namespace syntax {
       
     protected:
       std::string _identifier;
+  };
+
+  // Node which contains any kind of error so that they can be processed altogether.
+  class ErrorNode : public Node {
+    public:
+      ErrorNode(Error&);
+      Error& error() const { return _error; };
+
+    protected:
+      Error& _error;
   };
 }
 

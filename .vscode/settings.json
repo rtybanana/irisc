@@ -57,7 +57,9 @@
     "typeinfo": "cpp",
     "variant": "cpp",
     "thread": "cpp",
-    "cerrno": "cpp"
+    "cerrno": "cpp",
+    "set": "cpp",
+    "cinttypes": "cpp"
   },
   "cmake.configureOnOpen": true
 }

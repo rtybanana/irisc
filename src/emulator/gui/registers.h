@@ -13,14 +13,38 @@
 #include <iostream>
 #include <iomanip>
 #include <bitset>
-#include <FL/Fl_Window.H>
+#include <FL/Fl_Group.H>
 #include <FL/Fl_Box.H>
 #include "../../parser/syntax.h"
 #include "../../widgets/hoverbox.h"
 
 namespace vm {
 
-  class Registers {
+  //******************************************************************************************
+  // CPSR FLAGS
+  enum FLAG {
+    N,  // negative
+    Z,  // zero
+    C,  // carry
+    V   // overflow
+  };
+
+  static std::map<FLAG, std::string> flagShortName {
+    {N, "N"}, {Z, "Z"}, {C, "C"}, {V, "V"}
+  };
+
+  static std::map<FLAG, std::string> flagTitle {
+    {N, "Negative Flag (N)"}, {Z, "Zero Flag (Z)"}, {C, "Carry Flag (C)"}, {V, "Overflow Flag (V)"}
+  };
+
+  static std::map<FLAG, std::string> flagExplain {
+    {N, "This bit is set when the signed result of the operation is negative."}, 
+    {Z, "This bit is set when the result of the operation is equal to zero."}, 
+    {C, "This bit is set when the operation results in an unsigned overflow."}, 
+    {V, "This bit is set when the operation results in a signed overflow."}
+  };
+
+  class Registers : public Fl_Group {
     private:
 
       class proxy {
@@ -50,18 +74,17 @@ namespace vm {
           friend std::ostream& operator<<(std::ostream& os, const proxy& p) { os << p.value; return os; };
       };
 
-      Fl_Window* window;
       std::array<proxy, 16> registers;
       bool cpsr[4];
       std::array<Fl_Box*, 16> labels;
+      std::array<Fl_Box*, 16> label_borders;
       std::array<Fl_Box*, 4> flags;
       std::string regstr(uint32_t);
       Fl_Box* _title;
       Fl_Box* _details;
 
     public:
-      Registers();
-      void draw();
+      Registers(int, int);
       void update();
       void updateReg(int, uint32_t);
       void prepare();

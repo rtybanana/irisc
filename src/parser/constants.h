@@ -145,7 +145,7 @@ namespace syntax {
     {R12, "General Purpose Register\n"}, 
     {SP, "The memory address for the top of the stack."}, 
     {LR, "The return address of the current function."}, 
-    {PC, "The memory address of the current instruction."}, 
+    {PC, "The memory address of the next instruction."}, 
   };
 
 

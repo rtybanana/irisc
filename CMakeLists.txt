@@ -19,13 +19,11 @@ add_executable(
   irisc 
   WIN32 MACOSX_BUNDLE
   src/main.cpp
-  src/ui/repl.cpp
-  src/ui/repl.h
-  src/ui/editor.cpp
-  src/ui/editor.h
-  src/ui/util.c
-  src/ui/util.h
-  src/ui/constants.h
+  src/cmd/repl.cpp
+  src/cmd/repl.h
+  src/cmd/util.c
+  src/cmd/util.h
+  src/cmd/constants.h
   src/lexer/lexer.cpp
   src/lexer/lexer.h
   src/lexer/token.cpp
@@ -37,13 +35,15 @@ add_executable(
   src/parser/constants.h
   src/emulator/emulator.cpp
   src/emulator/emulator.h
-  src/emulator/windows/registers.cpp
-  src/emulator/windows/registers.h
-  src/emulator/windows/memory.cpp
-  src/emulator/windows/memory.h
-  src/emulator/windows/instruction.cpp
-  src/emulator/windows/instruction.h
-  src/emulator/windows/gui.h
+  src/emulator/gui/registers.cpp
+  src/emulator/gui/registers.h
+  src/emulator/gui/memory.cpp
+  src/emulator/gui/memory.h
+  src/emulator/gui/instruction.cpp
+  src/emulator/gui/instruction.h
+  src/emulator/gui/editor.cpp
+  src/emulator/gui/editor.h
+  src/emulator/gui/constants.h
   src/widgets/hoverbox.cpp
   src/widgets/hoverbox.h
 )

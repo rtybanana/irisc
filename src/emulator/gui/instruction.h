@@ -10,12 +10,12 @@
 
 #include "../../parser/syntax.h"
 #include "../../widgets/hoverbox.h"
-#include <FL/Fl_Window.H>
+#include <FL/Fl_Group.H>
 #include <FL/Fl_Box.H>
 
 namespace vm {
 
-  class Instruction {
+  class Instruction : public Fl_Group {
     private:
       Fl_Box* line;
       Fl_Box* status;
@@ -25,9 +25,9 @@ namespace vm {
       Fl_Box* _details;
 
     public:
-      Instruction();
-      Fl_Window* window;
-      void draw();
+      Instruction(int, int);
+      // Fl_Window* window;
+      // void draw();
       void set(syntax::InstructionNode*, bool);
       void describe(std::string, std::string);
   };

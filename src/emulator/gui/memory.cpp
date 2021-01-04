@@ -6,21 +6,21 @@
 using namespace vm;
 
 Memory::Memory() : stack(), data(), _text(), _memstart(0) {
-  window = new Fl_Window(340,180,"Memory");
-  Fl_Box *box = new Fl_Box(20,40,300,100,"Memory!");
+  // window = new Fl_Window(340,180,"Memory");
+  // Fl_Box *box = new Fl_Box(20,40,300,100,"Memory!");
 
-  box->box(FL_UP_BOX);
-  box->labelfont(FL_BOLD+FL_ITALIC);
-  box->labelsize(36);
-  box->labeltype(FL_SHADOW_LABEL);
+  // box->box(FL_UP_BOX);
+  // box->labelfont(FL_BOLD+FL_ITALIC);
+  // box->labelsize(36);
+  // box->labeltype(FL_SHADOW_LABEL);
 
-  window->set_non_modal();
-  window->end();
-  window->show();
+  // window->set_non_modal();
+  // window->end();
+  // window->show();
 
-  std::cout << "stack wake main thread" << std::endl;
+  // std::cout << "stack wake main thread" << std::endl;
 
-  Fl::awake();
+  // Fl::awake();
 };
 
 /**

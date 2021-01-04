@@ -43,18 +43,23 @@ syntax::Node* Parser::parseSingle() {
   //   return new syntax::LoadStoreNode(statement);
 
   if (statement[0].type() == lexer::OP_LABEL) {
-    throw SyntaxError("Invalid label-like token detected, did you forget a colon?", statement, 0);
+    throw SyntaxError("Invalid label-like token detected, did you forget a colon?", statement, statement[0].lineNumber(), 0);
   }
 
-  throw SyntaxError("Unrecognised instruction", statement, 0);
+  throw SyntaxError("Unrecognised instruction", statement, statement[0].lineNumber(), 0);
 }
 
 std::vector<syntax::Node*> Parser::parseMultiple() {
   std::vector<syntax::Node*> nodes;
   while (lexer.peekToken().type() != lexer::ERROR) {
     while (lexer.peekToken().type() == lexer::END) lexer.nextToken();   // skip all newlines
-  
-    syntax::Node* node = parseSingle();
+
+    syntax::Node* node;
+    try { node = parseSingle(); }
+    catch (Error& e) {                                                  // catch here and add to node list as error
+      node = new syntax::ErrorNode(e);
+    }
+
     if (node != nullptr) nodes.push_back(node);
   }
 

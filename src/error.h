@@ -16,19 +16,20 @@ class Error : public std::exception {
     std::string msg;
     std::vector<lexer::Token> statement;
     int tokenIndex;
+    int _lineNumber;
 
   public:
-    Error(std::string msg, std::vector<lexer::Token> statement, int tokenIndex);
+    Error(std::string msg, std::vector<lexer::Token> statement, int lineNumber, int tokenIndex) : 
+      std::exception(),
+      msg(msg),
+      statement(statement),
+      _lineNumber(lineNumber),
+      tokenIndex(tokenIndex)
+    {};
     virtual const char* what() const noexcept override = 0;
     std::string constructHelper() const;
+    int lineNumber() const { return _lineNumber; };
 };
-
-inline Error::Error(std::string msg, std::vector<lexer::Token> statement, int tokenIndex) : 
-  std::exception(),
-  msg(msg),
-  statement(statement),
-  tokenIndex(tokenIndex)
-{}
 
 inline std::string Error::constructHelper() const {
   std::string helper = "";
@@ -54,20 +55,20 @@ class LexicalError : public std::exception {
   protected:
     std::string msg;
     std::string statement;
-    unsigned int symbolIndex;
+    int symbolIndex;
+    int _lineNumber;
 
   public:
-    LexicalError(std::string msg, std::string statement, unsigned int symbolIndex);
+    LexicalError(std::string msg, std::string statement, int lineNumber, int symbolIndex) : 
+      std::exception(),
+      msg(msg),
+      statement(statement),
+      _lineNumber(lineNumber),
+      symbolIndex(symbolIndex)
+    {};
     const char* what() const noexcept override;
     std::string constructHelper() const;
 };
-
-inline LexicalError::LexicalError(std::string msg, std::string statement, unsigned int symbolIndex) : 
-  std::exception(),
-  msg(msg),
-  statement(statement),
-  symbolIndex(symbolIndex)
-{}
 
 inline std::string LexicalError::constructHelper() const {
   std::string helper = "";
@@ -98,8 +99,8 @@ inline const char* LexicalError::what() const noexcept {
  */ 
 class SyntaxError : public Error {
   public:
-    SyntaxError(std::string msg, std::vector<lexer::Token> statement, int tokenIndex = -1)
-      : Error(msg, statement, tokenIndex) {};
+    SyntaxError(std::string msg, std::vector<lexer::Token> statement, int lineNumber, int tokenIndex)
+      : Error(msg, statement, lineNumber, tokenIndex) {};
     const char* what() const noexcept override;
 };
 
@@ -117,8 +118,8 @@ inline const char* SyntaxError::what() const noexcept {
  */
 class NumericalError : public Error {
   public:
-    NumericalError(std::string msg, std::vector<lexer::Token> statement, int tokenIndex = -1)
-      : Error(msg, statement, tokenIndex) {};
+    NumericalError(std::string msg, std::vector<lexer::Token> statement, int lineNumber, int tokenIndex)
+      : Error(msg, statement, lineNumber, tokenIndex) {};
     const char* what() const noexcept override;
 };
 
@@ -136,8 +137,8 @@ inline const char* NumericalError::what() const noexcept {
  */
 class AssemblyError : public Error {
   public:
-    AssemblyError(std::string msg, std::vector<lexer::Token> statement, int tokenIndex = -1)
-      : Error(msg, statement, tokenIndex) {};
+    AssemblyError(std::string msg, std::vector<lexer::Token> statement, int lineNumber, int tokenIndex = -1)
+      : Error(msg, statement, lineNumber, tokenIndex) {};
     const char* what() const noexcept override;
 };
 
@@ -155,8 +156,8 @@ inline const char* AssemblyError::what() const noexcept {
  */
 class RuntimeError : public Error {
   public:
-    RuntimeError(std::string msg, std::vector<lexer::Token> statement, int tokenIndex = -1)
-      : Error(msg, statement, tokenIndex) {};
+    RuntimeError(std::string msg, std::vector<lexer::Token> statement, int lineNumber, int tokenIndex)
+      : Error(msg, statement, lineNumber, tokenIndex) {};
     const char* what() const noexcept override;
 };
 
@@ -174,8 +175,8 @@ inline const char* RuntimeError::what() const noexcept {
  */
 class InteractiveError : public Error {
   public:
-    InteractiveError(std::string msg, std::vector<lexer::Token> statement, int tokenIndex = -1)
-      : Error(msg, statement, tokenIndex) {};
+    InteractiveError(std::string msg, std::vector<lexer::Token> statement, int lineNumber, int tokenIndex)
+      : Error(msg, statement, lineNumber, tokenIndex) {};
     const char* what() const noexcept override;
 };
 

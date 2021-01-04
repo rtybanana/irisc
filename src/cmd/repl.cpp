@@ -16,7 +16,7 @@
 #include "../parser/parser.h"
 #include "../parser/constants.h"
 #include "../emulator/constants.h"
-#include "editor.h"
+// #include "editor.h"
 
 #include "repl.h"
 #include "util.h"
@@ -173,7 +173,7 @@ void REPL::fetchTokens() {
 }
 
 void REPL::loop(vm::Emulator &emulator) {
-	Editor editor(emulator);
+	// Editor editor(emulator);
 	std::cout << "\e[1miRISC\e[0m 0.0.1  [22nd Nov, 2020]" << std::endl;
   std::cout << "Type \":h\" for more information.\n" << std::endl;
 
@@ -237,7 +237,7 @@ void REPL::loop(vm::Emulator &emulator) {
 		}
 
 		else if (input == ":e" || input == ":editor") {
-			editor.toggle();
+			// emulator.toggleEditor();
 		}
 
 		else if (input == ".text") {
@@ -251,13 +251,7 @@ void REPL::loop(vm::Emulator &emulator) {
 
 		// Parse as assembler
 		else {
-			try { emulator.execute(input); }
-			
-			// Catch exception and print error
-			catch(const std::exception &e) {
-				std::cerr << e.what() << std::endl;
-			}
-
+			emulator.execute(input);
 			rx.history_add(input);
 		}
 	}

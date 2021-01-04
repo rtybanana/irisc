@@ -19,12 +19,15 @@ namespace widgets {
       std::string _title;
       std::string _detail;
       Fl_Color _color;
+      int _id;
       bool _hovering;
 
     public:
       HoverBox(int x, int y, int w, int h, std::string title, std::string detail, const char* l = (const char*)0);
+      int id() const { return _id; };
       std::string title() const { return _title; };
       std::string detail() const { return _detail; };
+      void id(int id) { _id = id; };
       void highlightColor(Fl_Color color) { _color = color; };
       bool hovering() const { return _hovering; };
       int handle(int) override;

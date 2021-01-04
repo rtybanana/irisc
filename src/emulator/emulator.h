@@ -13,19 +13,16 @@
 #include <bitset>
 #include <FL/Fl_Window.H>
 #include <FL/Fl_Box.H>
-#include "windows/heap.h"
-#include "windows/memory.h"
-#include "windows/registers.h"
-#include "windows/instruction.h"
+#include "gui/memory.h"
+#include "gui/registers.h"
+#include "gui/instruction.h"
+#include "gui/editor.h"
 #include "../parser/syntax.h"
-#include "../ui/editor.h"
 #include "constants.h"
 
-namespace ui {
-  class Editor;
-}
-
 namespace vm {
+
+  class Editor;
 
   class Emulator {
     private:
@@ -33,11 +30,16 @@ namespace vm {
       Memory memory;
       Registers registers;
       Instruction instruction;
-      std::vector<syntax::Node*> program;
+      Editor* editor;
+      // std::vector<syntax::Node*> program;
+      // Fl_Window* registers_w;
+      // Fl_Window* instruction_w;
+      // Fl_Window* editor_w;
       Fl_Window* window;
-      ui::Editor* editor;
+      // ui::Editor* editor;
       MODE _mode;
       bool _running;
+      double delay;
 
       bool executeBiOperand(syntax::BiOperandNode*);
       bool executeTriOperand(syntax::TriOperandNode*);
@@ -50,15 +52,17 @@ namespace vm {
     public:
       Emulator();
       void reset();
-      void setEditor(ui::Editor* editor) { this->editor = editor; };
+      void toggleEditor();
       void calculateLabelOffsets();
       // void assemble()
       void execute(std::string);
       void execute(syntax::Node*);
+      void compile(std::string);
       void run(std::string);
-      void start(std::vector<syntax::Node*>);
+      void start(std::vector<syntax::Node*>, bool run = true);
       void run();
       void stop();
+      void speed(double);
       void mode(MODE);
   };
 }

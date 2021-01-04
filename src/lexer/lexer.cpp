@@ -116,14 +116,14 @@ Token Lexer::nextToken(std::string &program, unsigned int &current_index, unsign
       int startIndex = lineStart - program.begin();
       errorIndex = errorIndex - startIndex;
 
-      throw LexicalError("Invalid token starting at position " + std::to_string(errorIndex + 1) + ".", statement, errorIndex + 1);
+      throw LexicalError("Invalid token starting at position " + std::to_string(errorIndex + 1) + ".", statement, errorIndex + 1, lineIndex);
     }
 
     if(current_state >= 0 && f_states[current_state]) {
       return Token(current_state, std::move(lexeme), lineIndex, tokenIndex++);
     }
     else {
-      throw LexicalError("Starting character is not recognised.", program, errorIndex);
+      throw LexicalError("Starting character is not recognised.", program, errorIndex, lineIndex);
     }
 }
 

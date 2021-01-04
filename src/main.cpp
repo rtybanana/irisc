@@ -10,14 +10,9 @@
 #include "lexer/token.h"
 #include "parser/parser.h"
 #include "parser/syntax.h"
-#include "ui/repl.h"
-
-#define STR(x)   #x
-#define SHOW_DEFINE(x) printf("%s=%s\n", #x, STR(x))
+#include "cmd/repl.h"
 
 int main() {
-    SHOW_DEFINE(FL_ABI_VERSION);
-
     Fl::lock();
     vm::Emulator emulator;
     replxx::Replxx rx;
@@ -35,8 +30,10 @@ int main() {
 
     if (repl_t.joinable()) repl_t.join();
 
+    // std::cout << "pre-final cleanup" << std::endl;
+
     // final cleanup
-    while(Fl::first_window()) delete Fl::first_window();
+    // while(Fl::first_window()) delete Fl::first_window();
     std::cout << "\nGoodbye" << std::endl;
 
     return 0;

@@ -2,14 +2,66 @@
 #include <bit>
 #include <thread>
 #include <chrono>
+#include <FL/Fl.H>
+#include <FL/Fl_Box.H>
 #include "emulator.h"
+#include "gui/constants.h"
 #include "../parser/parser.h"
 #include "../error.h"
-// #include "windows/gui.h"
 
 using namespace vm;
 
-Emulator::Emulator() : memory(), registers(), instruction(), _running(false) {};
+Emulator::Emulator() : memory(), registers(0, 0), instruction(0, 0), _running(false), delay(1) {
+  editor = new Editor(0, 0, this);
+
+  Fl::lock();
+    window = new Fl_Window(1140, 600, "iRISC");
+    window->color(vm::dark);
+
+    Fl_Box* reg_title = new Fl_Box(15, 15, 220, 15);
+    reg_title->label("Registers");
+    reg_title->labelsize(16);
+    reg_title->labelfont(FL_BOLD);
+    reg_title->labelcolor(FL_WHITE);
+    reg_title->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+    window->add(&registers);
+    registers.position(5, 29);
+
+    window->add(&instruction);
+    instruction.position(245, 409);
+
+    Fl_Box* edt_title = new Fl_Box(255, 15, 220, 15);
+    edt_title->label("Editor");
+    edt_title->labelsize(16);
+    edt_title->labelfont(FL_BOLD);
+    edt_title->labelcolor(FL_WHITE);
+    edt_title->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+    window->add(editor);
+    editor->position(245, 0);
+    
+    window->end();
+    window->callback(vm::close_cb);
+    window->show();
+
+    // registers_w = new Fl_Window(240,540,"Registers");
+    // registers_w->add(&registers);
+    // registers_w->end();
+    // registers_w->show();
+
+    // instruction_w = new Fl_Window(500,160,"Machine Code");
+    // instruction_w->add(&instruction);
+    // instruction_w->end();
+    // instruction_w->show();
+
+    // editor_w = new Fl_Window(280, 350, "Editor");
+    // editor_w->color(fl_rgb_color(uchar(35)));
+    // editor_w->add(editor);
+    // editor_w->end();
+    // editor_w->show();
+  Fl::unlock();
+
+  Fl::awake();
+};
 
 
 void Emulator::reset() {
@@ -18,15 +70,18 @@ void Emulator::reset() {
 }
 
 void Emulator::execute(std::string statement) {
-  lexer::Lexer lexer(statement);
-  parser::Parser parser(lexer);
-  syntax::Node* node = parser.parseSingle();
+  try {
+    lexer::Lexer lexer(statement);
+    parser::Parser parser(lexer);
+    syntax::Node* node = parser.parseSingle();
 
-
-  // std::cout << "\n******* node *******\n" << node->toString() << "\n******* end  *******\n" << std::endl;
-
-  if (node != nullptr) execute(node);
-  free(node);
+    if (node != nullptr) execute(node);
+    free(node);
+  }
+  // Catch exception and print error
+  catch(const Error &e) {
+    std::cerr << e.what() << std::endl;
+  }
 }
 
 /**
@@ -54,7 +109,24 @@ void Emulator::execute(syntax::Node* node) {
 
   }
   else if (dynamic_cast<syntax::LabelNode*>(node)) {
-    throw InteractiveError("Label instructions are not executable on their own. Try using the editor (:editor) to execute multiple lines.", node->statement(), 0);
+    throw InteractiveError("Label instructions are not executable on their own. Try using the editor (:editor) to execute multiple lines.", node->statement(), 0, node->lineNumber());
+  }
+}
+
+/**
+ * Parses but does not run a string containing a series of statements
+ */
+void Emulator::compile(std::string program) {
+  try {
+    lexer::Lexer lexer(program);
+    parser::Parser parser(lexer);
+    std::vector<syntax::Node*> nodes = parser.parseMultiple();
+
+    start(nodes, false);
+  }
+  // Catch exception and print error
+  catch(const Error &e) {
+    std::cerr << e.what() << std::endl;
   }
 }
 
@@ -62,26 +134,23 @@ void Emulator::execute(syntax::Node* node) {
  * Parses and runs a string containing a series of statements
  */
 void Emulator::run(std::string program) {
-  lexer::Lexer lexer(program);
-  // std::vector<lexer::Token> tokens = lexer.getTokens();
-  // for (lexer::Token token : tokens) std::cout << lexer::tokenNames[token.type()] << ", ";
-  // std::cout << std::endl;
+  try {
+    lexer::Lexer lexer(program);
+    parser::Parser parser(lexer);
+    std::vector<syntax::Node*> nodes = parser.parseMultiple();
 
-  parser::Parser parser(lexer);
-  std::vector<syntax::Node*> nodes = parser.parseMultiple();
-
-  // std::cout << "\n******* nodes *******" << std::endl;
-  // for (syntax::Node* node : nodes) std::cout << node->toString() << std::endl;
-  // std::cout <<   "*******  end  *******\n" << std::endl;
-
-  start(nodes);
-  // for (auto node : nodes) free(node);
+    start(nodes);
+  }
+  // Catch exception and print error
+  catch(const Error &e) {
+    std::cerr << e.what() << std::endl;
+  }
 }
 
 /**
  * Prepares the program nodes
  */
-void Emulator::start(std::vector<syntax::Node*> nodes) {
+void Emulator::start(std::vector<syntax::Node*> nodes, bool run) {
   if (_running) return;
 
   memory.softReset();
@@ -90,21 +159,28 @@ void Emulator::start(std::vector<syntax::Node*> nodes) {
   bool text = true;
   bool entry_point = false;
   std::vector<int> remove;
+  std::vector<syntax::ErrorNode> errors; 
   for (int i = 0; i < nodes.size(); i++) {
+    if (dynamic_cast<syntax::ErrorNode*>(nodes[i])) {
+      errors.push_back(*dynamic_cast<syntax::ErrorNode*>(nodes[i]));
+      remove.push_back(i);
+      continue;
+    }
+
     if (dynamic_cast<syntax::DirectiveNode*>(nodes[i])) {
       syntax::DirectiveNode* node = dynamic_cast<syntax::DirectiveNode*>(nodes[i]);
       if (node->isData()) text = false;
       else if (node->isText()) { text = true; remove.push_back(i); }
-      else if (node->isGlobal()) entry_point = true;
+      else if (node->isGlobal()) { entry_point = true; remove.push_back(i); }
     }
     else if (dynamic_cast<syntax::AllocationNode*>(nodes[i])) {
-      if (text) throw AssemblyError("Cannot declare data outside of the data section.", nodes[i]->statement());
+      if (text) throw AssemblyError("Cannot declare data outside of the data section.", nodes[i]->statement(), nodes[i]->lineNumber(), -1);
       else {
         memory.allocate(dynamic_cast<syntax::AllocationNode*>(nodes[i]));
       }
     }
     else if (dynamic_cast<syntax::LabelNode*>(nodes[i])) {
-      if (!text) throw AssemblyError("Cannot declare branchable labels outside of the text section.", nodes[i]->statement());
+      if (!text) throw AssemblyError("Cannot declare branchable labels outside of the text section.", nodes[i]->statement(), nodes[i]->lineNumber(), -1);
       if (entry_point) {
         registers[syntax::PC] = memory.memstart() + ((i - remove.size()) * 32);
         entry_point = false;
@@ -118,6 +194,12 @@ void Emulator::start(std::vector<syntax::Node*> nodes) {
     if (!text) remove.push_back(i);
   }
 
+  if (!errors.empty()) {
+    editor->wavyLine(errors);
+    for (syntax::Node* node : nodes) free(node);
+    return;
+  }
+
   std::reverse(remove.begin(), remove.end());
   for (int i : remove) {
     free(nodes[i]);
@@ -128,7 +210,7 @@ void Emulator::start(std::vector<syntax::Node*> nodes) {
   for (syntax::Node* node : nodes) instructions.push_back(dynamic_cast<syntax::InstructionNode*>(node));
   memory.setText(instructions);
 
-  std::thread([this]{ this->run(); }).detach();
+  if (run) std::thread([this]{ this->run(); }).detach();
 }
 
 /**
@@ -142,16 +224,24 @@ void Emulator::run() {
     std::cout << "PC: " << registers[syntax::PC] << ": " << node->toString() << std::endl;
     editor->highlightLine(node->statement()[0].lineNumber());
 
+    
     if (dynamic_cast<syntax::BranchNode*>(node)) {
       registers.prepare();
       bool executed = executeBranch(dynamic_cast<syntax::BranchNode*>(node));
-      if (!executed) registers[syntax::PC] += 32;                     // increment to the next instruction
+      if (!executed) registers[syntax::PC] += 32;                                    // increment to the next instruction
     }
     else {
-      execute(node);
       registers[syntax::PC] += 32;                                    // increment to the next instruction
+      execute(node);
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+      
+    int sleepfor = 50;
+    int sleptfor = 0;
+    while (sleptfor < delay*1000 && _running) {      // check every 50ms to see if speed value has changed
+      // sleep in 50ms chunks (smallest speed denomination)   
+      std::this_thread::sleep_for(std::chrono::milliseconds(sleepfor));
+      sleptfor += sleepfor;
+    }
   }
 
   _running = false;
@@ -165,6 +255,10 @@ bool Emulator::running() {
 
 void Emulator::stop() {
   _running = false;
+}
+
+void Emulator::speed(double delay) {
+  this->delay = delay;
 }
 
 /**
@@ -348,3 +442,8 @@ bool Emulator::executeBranch(syntax::BranchNode* instruction) {
 void Emulator::mode(MODE mode) {
   _mode = mode;
 }
+
+// void Emulator::toggleEditor() {
+//   if (editor_w->visible()) editor_w->hide();
+//   else editor_w->show();
+// }
