@@ -73,7 +73,7 @@ namespace lexer {
       {"ldr", LOAD_STORE}, {"str", LOAD_STORE},
 
       // branch instructions
-      {"bx", BRANCH}, {"bl", BRANCH}, { "b", BRANCH}
+      {"bx", BRANCH}, {"bl", BRANCH }, { "b", BRANCH }
     };
 
     std::string tokenNames[] = {

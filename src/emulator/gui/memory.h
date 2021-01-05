@@ -37,6 +37,7 @@ namespace vm {
       size_t memstart() const { return _memstart; };
       syntax::InstructionNode* instruction(uint32_t offset) { return _text[(offset - _memstart) / 32]; };
       void allocate(syntax::AllocationNode*);
+      bool hasLabel(std::string label) const { return labels.contains(label); };
       void addLabel(std::string, unsigned int);
       unsigned int label(std::string label)const;
       void setText(std::vector<syntax::InstructionNode*>);

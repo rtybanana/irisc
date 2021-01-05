@@ -157,7 +157,7 @@ void Emulator::start(std::vector<syntax::Node*> nodes, bool run) {
   registers[syntax::PC] = memory.memstart();
 
   bool text = true;
-  bool entry_point = false;
+  // bool entry_point = false;
   std::vector<int> remove;
   std::vector<syntax::ErrorNode> errors; 
   for (int i = 0; i < nodes.size(); i++) {
@@ -171,7 +171,7 @@ void Emulator::start(std::vector<syntax::Node*> nodes, bool run) {
       syntax::DirectiveNode* node = dynamic_cast<syntax::DirectiveNode*>(nodes[i]);
       if (node->isData()) text = false;
       else if (node->isText()) { text = true; remove.push_back(i); }
-      else if (node->isGlobal()) { entry_point = true; remove.push_back(i); }
+      // else if (node->isGlobal()) { entry_point = true; remove.push_back(i); }
     }
     else if (dynamic_cast<syntax::AllocationNode*>(nodes[i])) {
       if (text) throw AssemblyError("Cannot declare data outside of the data section.", nodes[i]->statement(), nodes[i]->lineNumber(), -1);
@@ -181,14 +181,16 @@ void Emulator::start(std::vector<syntax::Node*> nodes, bool run) {
     }
     else if (dynamic_cast<syntax::LabelNode*>(nodes[i])) {
       if (!text) throw AssemblyError("Cannot declare branchable labels outside of the text section.", nodes[i]->statement(), nodes[i]->lineNumber(), -1);
-      if (entry_point) {
-        registers[syntax::PC] = memory.memstart() + ((i - remove.size()) * 32);
-        entry_point = false;
-      }
-
       syntax::LabelNode* node = dynamic_cast<syntax::LabelNode*>(nodes[i]);
-      memory.addLabel(node->identifier(), i - remove.size());
-      remove.push_back(i);
+      
+      if (memory.hasLabel(node->identifier())) {
+        throw AssemblyError("Cannot declare multiple labels with the same name: '" + node->identifier() + "'.", node->statement(), node->lineNumber(), 0);
+      }
+      else {
+        if (node->identifier() == "main") registers[syntax::PC] = memory.memstart() + ((i - remove.size()) * 32);
+        memory.addLabel(node->identifier(), i - remove.size());
+        remove.push_back(i);
+      }
     }
 
     if (!text) remove.push_back(i);
@@ -366,6 +368,9 @@ bool Emulator::executeTriOperand(syntax::TriOperandNode* instruction) {
     case syntax::RSB:
       if (set) registers.setFlags(m, n, (uint64_t)m - n, '-');
       result = m - n;
+    case syntax::BIC:
+      if (set) registers.setFlags(m, n, (uint64_t)n & (~m));
+      result = n & (~m);
   } 
 
   registers[dest] = result;

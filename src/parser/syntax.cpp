@@ -142,10 +142,18 @@ std::tuple<std::string, std::string, std::string> InstructionNode::splitOpCode(l
 
   using namespace lexer;
   std::map<std::string, TOKEN>::reverse_iterator it = std::find_if(operations.rbegin(), operations.rend(), [token](const std::pair<std::string, TOKEN> op){ return token.value().substr(0, op.first.size()) == op.first; });
+  TOKEN type = it->second;
   operation = it->first;
 
+  if (type == BRANCH) {                                // branches are special cases because they are shorter instructions
+    if (token.value().size() == 2 | token.value().size() == 4) {
+      if (token.value()[1] == 'l') operation = "bl";
+      else if (token.value()[1] == 'x') operation = "bx";
+    }
+  }
+  
   std::string suffix = token.value().substr(operation.size(), token.value().size());
-  if (suffix.size() == 1 || suffix.size() == 3) {                                                       // valid operation suffixes are up to 3 letters long maximum
+  if (suffix.size() == 1 || suffix.size() == 3) {  // valid operation suffixes are up to 3 letters long maximum
     modifier = suffix[0];
     suffix = suffix.substr(1, suffix.size());
   }                                                      

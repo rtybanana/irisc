@@ -44,22 +44,33 @@ TOKEN Token::tokenType(int final_state, std::string &value) {
         std::string operation = it->first;
         token = it->second;
 
-        std::string suffix = value.substr(operation.size(), value.size());
-        if (suffix.size() == 1 || suffix.size() == 3) {                                                       // valid operation suffixes are up to 3 letters long maximum
-          char modifier = suffix[0];
-          suffix = suffix.substr(1, suffix.size());
-          
-          if (suffix.size() == 0 || std::any_of(conditions.begin(), conditions.end(), [suffix](const std::string s){ return s == suffix; })) {
-            if ( token == LOAD_STORE && std::any_of(sizes.begin(), sizes.end(), [modifier](const char c){ return c == modifier; }) ||
-                 token == BRANCH && std::any_of(modifiers.begin(), modifiers.end(), [modifier](const char c){ return c == modifier; }) ||
-                (token == BI_OPERAND || token == TRI_OPERAND) && modifier == 's') {
-              return token;
-            }
+        if (token == BRANCH) {
+          std::string suffix;
+          if (value.size() == 1 || value.size() == 3) suffix = value.substr(1, value.size());
+          else if (value.size() == 2 || value.size() == 4) std::string suffix = value.substr(2, value.size());
+
+          if (suffix.size() == 0 || suffix.size() == 2 && std::any_of(conditions.begin(), conditions.end(), [suffix](const std::string s){ return s == suffix; })) {
+            return token;
           }
-        }                                                      
-        else if (suffix.size() == 0 || suffix.size() == 2 && std::any_of(conditions.begin(), conditions.end(), [suffix](const std::string s){ return s == suffix; })) {
-          return token;
-        }      
+        }
+        else {
+          std::string suffix = value.substr(operation.size(), value.size());
+          if (suffix.size() == 1 || suffix.size() == 3) {                                                       // valid operation suffixes are up to 3 letters long maximum
+            char modifier = suffix[0];
+            suffix = suffix.substr(1, suffix.size());
+            
+            if (suffix.size() == 0 || std::any_of(conditions.begin(), conditions.end(), [suffix](const std::string s){ return s == suffix; })) {
+              if ( token == LOAD_STORE && std::any_of(sizes.begin(), sizes.end(), [modifier](const char c){ return c == modifier; }) ||
+                  token == BRANCH && std::any_of(modifiers.begin(), modifiers.end(), [modifier](const char c){ return c == modifier; }) ||
+                  (token == BI_OPERAND || token == TRI_OPERAND) && modifier == 's') {
+                return token;
+              }
+            }
+          }                                                      
+          else if (suffix.size() == 0 || suffix.size() == 2 && std::any_of(conditions.begin(), conditions.end(), [suffix](const std::string s){ return s == suffix; })) {
+            return token;
+          }      
+        }
       }
       if (value[0] == 'r' && value.size() <= 3) {
         if (std::all_of(value.begin() + 1, value.end(), ::isdigit)) {                   // all remaining characters are digits
