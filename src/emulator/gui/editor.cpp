@@ -6,7 +6,6 @@
 #include <string>
 #include <FL/Fl.H>
 #include <FL/Fl_Box.H>
-#include <FL/Fl_Button.H>
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Scroll.H>
 #include <FL/Fl_Hor_Nice_Slider.H>
@@ -16,14 +15,14 @@ using namespace vm;
 void changed_cb(int, int nInserted, int nDeleted,int, const char*, void* v) {
   if (nInserted || nDeleted) {
     Editor *editor = (Editor *)v;
-    editor->editor->show_insert_position();
+    editor->show_insert_position();
     editor->highlight();
   }
 }
 
-void run_cb(Fl_Widget* widget, void* v) {
+void playback_cb(Fl_Widget* widget, void* v) {
   Editor* editor = (Editor*) v;
-  editor->run();
+  editor->playback();
 }
 
 void stop_cb(Fl_Widget* widget, void* v) {
@@ -48,7 +47,7 @@ void cursorBlink(void* window) {
   Fl::repeat_timeout(0.5, cursorBlink, window);
 }
 
-Editor::Editor(int x, int y, vm::Emulator* emulator) : Fl_Group(x, y, 890, 380), cursorHidden(false), emulator(emulator) {
+Editor::Editor(int x, int y, Emulator* emulator) : Fl_Group(x, y, 890, 380), cursorHidden(false), emulator(emulator) {
   // emulator.setEditor(this);           // link editor and emulator
 
   Fl::lock();
@@ -59,7 +58,7 @@ Editor::Editor(int x, int y, vm::Emulator* emulator) : Fl_Group(x, y, 890, 380),
 
     editor = new Fl_Text_Editor(10, 40, 870, 374);
     Fl_Box* border = new Fl_Box(9, 39, 872, 376);
-    textbuf = new TextBuffer();
+    textbuf = new Fl_Text_Buffer();
     stylebuf = new Fl_Text_Buffer();
 
     editor->buffer(textbuf);
@@ -69,11 +68,12 @@ Editor::Editor(int x, int y, vm::Emulator* emulator) : Fl_Group(x, y, 890, 380),
     editor->box(FL_NO_BOX);
     editor->color(fl_rgb_color(uchar(20)));
     editor->textcolor(FL_WHITE);
-    editor->textsize(Fl_Fontsize(20));
+    editor->textsize(18);
     editor->selection_color(FL_YELLOW);
     editor->linenumber_width(30);
     editor->linenumber_fgcolor(vm::light);
     editor->linenumber_bgcolor(fl_rgb_color(uchar(35)));
+    editor->linenumber_size(14);
 
     border->box(FL_BORDER_FRAME);
     border->color(fl_rgb_color(uchar(150)));
@@ -89,23 +89,23 @@ Editor::Editor(int x, int y, vm::Emulator* emulator) : Fl_Group(x, y, 890, 380),
 
     Fl_Group* ctrl = new Fl_Group(10, 10, 870, 25);
     Fl_Hor_Nice_Slider* spd = new Fl_Hor_Nice_Slider(670, 10, 120, 25);
-    Fl_Button* stp = new Fl_Button(795, 10, 25, 25, "@-4square");
-    Fl_Button* run = new Fl_Button(825, 10, 25, 25, "@+1>");
-    Fl_Button* fwd = new Fl_Button(855, 10, 25, 25, "@+1>|");
+    Fl_Button* stp = new Fl_Button(795, 10, 25, 25, "@-2square");
+    pbk = new Fl_Button(825, 10, 25, 25, "@>|");
+    Fl_Button* fwd = new Fl_Button(855, 10, 25, 25, "@->|");
     spd->bounds(2.5, 0.05);
     spd->value(1);
     spd->color(vm::dark);
     stp->box(FL_BORDER_FRAME);
     stp->color(vm::grey);
     stp->labelcolor(fl_rgb_color(uchar(0xad), uchar(0x0b), uchar(0x0b)));
-    run->box(FL_BORDER_FRAME);
-    run->color(vm::grey);
-    run->labelcolor(fl_rgb_color(uchar(0x0b), uchar(0xad), uchar(0x0b)));
+    pbk->box(FL_BORDER_FRAME);
+    pbk->color(vm::grey);
+    pbk->labelcolor(vm::green);
     fwd->box(FL_BORDER_FRAME);
     fwd->color(vm::grey);
-    fwd->labelcolor(fl_rgb_color(uchar(0x0b), uchar(0xad), uchar(0x0b)));
+    fwd->labelcolor(vm::green);
 
-    run->callback(run_cb, this);
+    pbk->callback(playback_cb, this);
     stp->callback(stop_cb, this);
     fwd->callback(step_cb, this);
     spd->callback(speed_cb, this);
@@ -166,16 +166,35 @@ void Editor::highlight() {
   stylebuf->text(style.c_str());
 }
 
-void Editor::highlightLine(int lineNumber) {
-  editor->selection_color(FL_YELLOW);
+void Editor::running(bool running) {
+  Fl::lock();
+    if (!running) {
+      pbk->labelcolor(vm::green);
+      pbk->redraw_label();
+      highlightLine(-1);
+    }
+  Fl::unlock();
 
-  if (lineNumber == -1) {
-    textbuf->highlight(0, 0);
-    return;
-  }
-  int lineStart = textbuf->skip_lines(0, lineNumber - 1);
-  int lineEnd = textbuf->line_end(lineStart);
-  textbuf->highlight(lineStart, lineEnd);
+  Fl::awake();
+}
+
+void Editor::highlightLine(int lineNumber) {
+    if (lineNumber == -1) {
+      Fl::lock();
+        textbuf->highlight(0, 0);     // unhighlight
+      Fl::unlock();
+    }
+    else {
+      int lineStart = textbuf->skip_lines(0, lineNumber - 1);
+      int lineEnd = textbuf->line_end(lineStart);
+
+      Fl::lock();
+        editor->scroll(lineNumber - 8, 0);
+        textbuf->highlight(lineStart, lineEnd);
+      Fl::unlock();
+    }
+  
+  Fl::awake();
 }
 
 void Editor::wavyLine(std::vector<syntax::ErrorNode> errors) {
@@ -189,22 +208,55 @@ void Editor::wavyLine(std::vector<syntax::ErrorNode> errors) {
 
 void Editor::blink() {
   cursorHidden = !cursorHidden;
-  editor->show_cursor(!cursorHidden);
+  Fl::lock();
+    editor->show_cursor(!cursorHidden);
+  Fl::unlock();
+
+  Fl::awake();
 }
 
-void Editor::run() {
-  std::string program(textbuf->text());
-  emulator->run(program);
+void Editor::playback() {
+
+
+  Fl::lock();
+    if (emulator->running()) {
+      if (emulator->paused()) {
+        emulator->resume();
+        pbk->labelcolor(vm::green);
+      }
+      else {
+        emulator->pause();
+        pbk->labelcolor(vm::orange);
+      }
+    }
+    else emulator->run(program());
+  Fl::unlock();
+
+  Fl::awake();
 }
 
 void Editor::stop() {
   emulator->stop();
+
+  Fl::lock();
+    pbk->labelcolor(vm::green);
+    pbk->redraw_label();
+  Fl::unlock();
+
+  Fl::awake();
 }
 
 void Editor::step() {
-  //
+  emulator->step();
 }
 
 void Editor::speed(double delay) {
   emulator->speed(delay);
+}
+
+std::string Editor::program() const {
+  char* _program = textbuf->text();
+  std::string program = _program;
+  free(_program);
+  return program;
 }

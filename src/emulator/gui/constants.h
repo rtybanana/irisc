@@ -33,17 +33,19 @@ namespace vm {
   static Fl_Color light = fl_rgb_color(uchar(225));
   static Fl_Color red = fl_rgb_color(uchar(255), uchar(85), uchar(85));
   static Fl_Color blue = fl_rgb_color(uchar(85), uchar(85), uchar(255));
+  static Fl_Color green = fl_rgb_color(uchar(0x0b), uchar(0xad), uchar(0x0b));
+  static Fl_Color orange = fl_rgb_color(uchar(0xff), uchar(0xa5), uchar(0x00));
 
   // Style table
   static Fl_Text_Display::Style_Table_Entry styles[] = {
   //  FONT COLOR        FONT FACE     FONT SIZE
   //  ----------------- ------------- --------------
-    { FL_WHITE,         FL_COURIER,   20 },   // A - default
-    { red,              FL_COURIER,   20 },   // B - Red
-    { blue,             FL_COURIER,   20 },   // C - Blue
-    { FL_MAGENTA,       FL_COURIER,   20 },   // D - Magenta
-    { FL_DARK_YELLOW,   FL_COURIER,   20 },   // E - Yellow
-    { FL_DARK_GREEN,    FL_COURIER,   20 },   // F - Green
+    { FL_WHITE,         FL_COURIER,   18 },   // A - default
+    { red,              FL_COURIER,   18 },   // B - Red
+    { blue,             FL_COURIER,   18 },   // C - Blue
+    { FL_MAGENTA,       FL_COURIER,   18 },   // D - Magenta
+    { FL_DARK_YELLOW,   FL_COURIER,   18 },   // E - Yellow
+    { FL_DARK_GREEN,    FL_COURIER,   18 },   // F - Green
   };
 
   // static std::map<std::string, char> styleMap = {

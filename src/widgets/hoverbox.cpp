@@ -9,7 +9,8 @@ HoverBox::HoverBox(int x, int y, int w, int h, std::string title, std::string de
   _title(title),
   _detail(detail),
   _color(FL_YELLOW),
-  _hovering(false) {
+  _hovering(false),
+  _id(-1) {
     this->box(FL_BORDER_FRAME);
     this->color(vm::grey);
   }

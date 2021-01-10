@@ -24,8 +24,11 @@ class Error : public std::exception {
       msg(msg),
       statement(statement),
       _lineNumber(lineNumber),
-      tokenIndex(tokenIndex)
-    {};
+      tokenIndex(tokenIndex) {};
+    Error(std::string msg, int lineNumber) :
+      std::exception(),
+      msg(msg),
+      _lineNumber(lineNumber) {};
     virtual const char* what() const noexcept override = 0;
     std::string constructHelper() const;
     int lineNumber() const { return _lineNumber; };
@@ -51,19 +54,19 @@ inline std::string Error::constructHelper() const {
 /**
  * LexicalError class - informs the user of invalid characters in their input.
  */ 
-class LexicalError : public std::exception {
+class LexicalError : public Error{
   protected:
     std::string msg;
-    std::string statement;
+    std::string statementStr;
     int symbolIndex;
     int _lineNumber;
 
   public:
-    LexicalError(std::string msg, std::string statement, int lineNumber, int symbolIndex) : 
-      std::exception(),
-      msg(msg),
-      statement(statement),
-      _lineNumber(lineNumber),
+    LexicalError(std::string msg, std::string statementStr, int lineNumber, int symbolIndex) : 
+      Error(msg, lineNumber),
+      // msg(msg),
+      statementStr(statementStr),
+      // _lineNumber(lineNumber),
       symbolIndex(symbolIndex)
     {};
     const char* what() const noexcept override;
@@ -72,11 +75,11 @@ class LexicalError : public std::exception {
 
 inline std::string LexicalError::constructHelper() const {
   std::string helper = "";
-  for (int i = 0; i < statement.size(); i++) {
+  for (int i = 0; i < statementStr.size(); i++) {
     std::stringstream oss;
     bool problemToken = i == symbolIndex;
     oss << (problemToken ? "\e[1;3;4m" : "")
-        << statement[i]
+        << statementStr[i]
         << (problemToken ? "\e[0m" : "");
 
     helper += oss.str();  

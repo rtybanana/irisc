@@ -15,6 +15,7 @@
 #include <bitset>
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Box.H>
+// #include "../emulator.h"
 #include "../../parser/syntax.h"
 #include "../../widgets/hoverbox.h"
 
@@ -74,6 +75,7 @@ namespace vm {
           friend std::ostream& operator<<(std::ostream& os, const proxy& p) { os << p.value; return os; };
       };
 
+      // Emulator* emulator;
       std::array<proxy, 16> registers;
       bool cpsr[4];
       std::array<Fl_Box*, 16> labels;
@@ -82,13 +84,16 @@ namespace vm {
       std::string regstr(uint32_t);
       Fl_Box* _title;
       Fl_Box* _details;
+      bool _running;
 
     public:
       Registers(int, int);
+      // void linkEmulator(Emulator* emulator) { this->emulator = emulator; };
+      void running(bool running) { _running = running; };
       void update();
       void updateReg(int, uint32_t);
       void prepare();
-      void clear();
+      void reset();
       void setFlags(uint32_t, uint32_t, uint64_t, char _operator = ' ');
       bool checkFlags(syntax::CONDITION);
       void describe(std::string, std::string);

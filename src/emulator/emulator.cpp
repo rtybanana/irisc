@@ -11,21 +11,15 @@
 
 using namespace vm;
 
-Emulator::Emulator() : memory(), registers(0, 0), instruction(0, 0), _running(false), delay(1) {
+Emulator::Emulator() : memory(), registers(0, 0), instruction(0, 0), _running(false), _paused(false), _step(false), delay(1) {
   editor = new Editor(0, 0, this);
 
   Fl::lock();
     window = new Fl_Window(1140, 600, "iRISC");
     window->color(vm::dark);
 
-    Fl_Box* reg_title = new Fl_Box(15, 15, 220, 15);
-    reg_title->label("Registers");
-    reg_title->labelsize(16);
-    reg_title->labelfont(FL_BOLD);
-    reg_title->labelcolor(FL_WHITE);
-    reg_title->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
     window->add(&registers);
-    registers.position(5, 29);
+    registers.position(5, 0);
 
     window->add(&instruction);
     instruction.position(245, 409);
@@ -117,6 +111,8 @@ void Emulator::execute(syntax::Node* node) {
  * Parses but does not run a string containing a series of statements
  */
 void Emulator::compile(std::string program) {
+  if (_running) return;
+
   try {
     lexer::Lexer lexer(program);
     parser::Parser parser(lexer);
@@ -134,6 +130,8 @@ void Emulator::compile(std::string program) {
  * Parses and runs a string containing a series of statements
  */
 void Emulator::run(std::string program) {
+  if (_running) return;
+
   try {
     lexer::Lexer lexer(program);
     parser::Parser parser(lexer);
@@ -151,8 +149,6 @@ void Emulator::run(std::string program) {
  * Prepares the program nodes
  */
 void Emulator::start(std::vector<syntax::Node*> nodes, bool run) {
-  if (_running) return;
-
   memory.softReset();
   registers[syntax::PC] = memory.memstart();
 
@@ -219,9 +215,10 @@ void Emulator::start(std::vector<syntax::Node*> nodes, bool run) {
  * 
  */ 
 void Emulator::run() {
-  _running = true;
+  running(true);
 
   while (running()) {
+    _step = false;                                                              // revert step to false so that instruction is only advanced once if stepping
     syntax::InstructionNode* node = memory.instruction(registers[syntax::PC]);
     std::cout << "PC: " << registers[syntax::PC] << ": " << node->toString() << std::endl;
     editor->highlightLine(node->statement()[0].lineNumber());
@@ -230,25 +227,38 @@ void Emulator::run() {
     if (dynamic_cast<syntax::BranchNode*>(node)) {
       registers.prepare();
       bool executed = executeBranch(dynamic_cast<syntax::BranchNode*>(node));
-      if (!executed) registers[syntax::PC] += 32;                                    // increment to the next instruction
+      if (!executed) registers[syntax::PC] += 32;                               // increment to the next instruction
     }
     else {
-      registers[syntax::PC] += 32;                                    // increment to the next instruction
+      registers[syntax::PC] += 32;                                              // increment to the next instruction
       execute(node);
     }
       
     int sleepfor = 50;
     int sleptfor = 0;
-    while (sleptfor < delay*1000 && _running) {      // check every 50ms to see if speed value has changed
-      // sleep in 50ms chunks (smallest speed denomination)   
+    while ((sleptfor < delay*1000 || _paused) && _running && !_step) {          // check every 50ms to see if speed value has changed
       std::this_thread::sleep_for(std::chrono::milliseconds(sleepfor));
       sleptfor += sleepfor;
     }
+
+    std::cout << "advancing instruction" << std::endl;
   }
 
-  _running = false;
-  editor->highlightLine(-1);          // unhighlight all lines
-  registers.prepare();
+  std::cout << "finished running" << std::endl;
+  running(false);
+}
+
+
+void Emulator::running(bool running) { 
+  if (!running) {
+    std::cout << "cleaning up gui" << std::endl;
+    _paused = false;
+    registers.prepare();
+  }
+
+  _running = running; 
+  registers.running(running);
+  editor->running(running);
 }
 
 bool Emulator::running() {
@@ -257,6 +267,15 @@ bool Emulator::running() {
 
 void Emulator::stop() {
   _running = false;
+  _paused = false;
+}
+
+void Emulator::step() { 
+  if (_running) _step = true;
+  else {
+    pause();
+    run(editor->program());
+  }
 }
 
 void Emulator::speed(double delay) {

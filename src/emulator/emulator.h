@@ -39,6 +39,8 @@ namespace vm {
       // ui::Editor* editor;
       MODE _mode;
       bool _running;
+      bool _paused;
+      bool _step;
       double delay;
 
       bool executeBiOperand(syntax::BiOperandNode*);
@@ -47,10 +49,12 @@ namespace vm {
       bool executeBranch(syntax::BranchNode*);
       uint32_t deflex(syntax::FlexOperand);
       uint32_t applyFlexShift(syntax::SHIFT, int, int);
-      bool running();
 
     public:
       Emulator();
+      bool running();
+      bool paused() const { return _paused; };
+      
       void reset();
       void toggleEditor();
       void calculateLabelOffsets();
@@ -58,9 +62,13 @@ namespace vm {
       void execute(std::string);
       void execute(syntax::Node*);
       void compile(std::string);
+      void running(bool);
       void run(std::string);
       void start(std::vector<syntax::Node*>, bool run = true);
       void run();
+      void pause() { _paused = true; };
+      void step();
+      void resume() { _paused = false; };
       void stop();
       void speed(double);
       void mode(MODE);
