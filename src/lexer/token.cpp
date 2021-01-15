@@ -61,8 +61,8 @@ TOKEN Token::tokenType(int final_state, std::string &value) {
             
             if (suffix.size() == 0 || std::any_of(conditions.begin(), conditions.end(), [suffix](const std::string s){ return s == suffix; })) {
               if ( token == LOAD_STORE && std::any_of(sizes.begin(), sizes.end(), [modifier](const char c){ return c == modifier; }) ||
-                  token == BRANCH && std::any_of(modifiers.begin(), modifiers.end(), [modifier](const char c){ return c == modifier; }) ||
-                  (token == BI_OPERAND || token == TRI_OPERAND) && modifier == 's') {
+                   token == BRANCH && std::any_of(modifiers.begin(), modifiers.end(), [modifier](const char c){ return c == modifier; }) ||
+                  (token == BI_OPERAND || token == TRI_OPERAND || token == SHIFT) && modifier == 's') {
                 return token;
               }
             }

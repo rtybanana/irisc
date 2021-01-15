@@ -409,6 +409,24 @@ std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, std::strin
 
 
 /**
+ * LoadStoreNode
+ * Responsible for parsing load/store operations the most complex instruction, syntactically
+ */
+LoadStoreNode::LoadStoreNode(std::vector<lexer::Token> statement) : InstructionNode(statement) {
+  auto [operation, modifier, condition] = splitOpCode(nextToken());
+  this->_op = opMap[operation];
+  this->_setFlags = modifier.empty() ? false : true;
+  this->_cond = condMap[condition];
+
+  throw DeveloperError("Load and Store operations are not currently implemented. Sorry about that.", statement, lineNumber(), -1);
+}
+
+std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, std::string, int>>> LoadStoreNode::assemble() {
+  return {0, {{"", "", "", 0}}};
+}
+
+
+/**
  * FlexOperand 
  * Responsible for parsing the flexible operand 2 in ARMv7 assembly.
  */
