@@ -188,8 +188,8 @@ BranchNode::BranchNode(std::vector<lexer::Token> statement) : InstructionNode(st
   if (hasToken()) throw SyntaxError("Unexpected token '" + peekToken().value() + "' after valid instruction end.", statement, lineNumber(), peekToken().tokenNumber());
 }
 
-std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, int>>> BranchNode::assemble() {
-  return {0, {{"", "", 0}}};
+std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, std::string, int>>> BranchNode::assemble() {
+  return {0, {{"", "", "", 0}}};
 }
 
 
@@ -212,34 +212,34 @@ BiOperandNode::BiOperandNode(std::vector<lexer::Token> statement) : InstructionN
 /**
  * Assembles this instruction into the proper machine code that would execute it on an ARM device.
  */
-std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, int>>> BiOperandNode::assemble() {
+std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, std::string, int>>> BiOperandNode::assemble() {
   uint32_t instruction = 0;
-  std::vector<std::tuple<std::string, std::string, int>> explanation;
+  std::vector<std::tuple<std::string, std::string, std::string, int>> explanation;
 
   instruction = (instruction << 4) | _cond;
-  explanation.push_back({"Condition Code", condTitle[_cond] + ". " + condExplain[_cond], 4});
+  explanation.push_back({"Condition Code", condTitle[_cond], condExplain[_cond], 4});
 
   instruction <<= 3;                // logical shift left 8 for data processing
-  explanation.push_back({"Instruction Type", "Arithmetic Operation. Indicates the organisation of bits to the processor so that the instruction can be decoded.", 3});
+  explanation.push_back({"Instruction Type", "Arithmetic Operation", "Indicates the organisation of bits to the processor so that the instruction can be decoded.", 3});
 
   instruction = (instruction << 4) | _op;
-  explanation.push_back({"Operation Code", opTitle[_op] + ". " + opExplain[_op], 4});
+  explanation.push_back({"Operation Code", opTitle[_op], opExplain[_op], 4});
 
   instruction = (instruction << 1) | _setFlags;
-  explanation.push_back({"CPSR Flags", flagsExplain[_setFlags], 1});
+  explanation.push_back({"CPSR Flags", (_setFlags ? "Set" : "Not Set"), flagExplain[_setFlags], 1});
 
   instruction <<= 4;
-  explanation.push_back({"Second Operand", "Unused. These bits are left unset because the instruction only has two operands.", 4});
+  explanation.push_back({"Second Operand", "Unused", "These bits are left unset because the instruction only has two operands.", 4});
 
   instruction = (instruction << 4) | _Rd;
-  explanation.push_back({"First Operand", regTitle[_Rd] + ". The first operand is often referred to as the 'destination' register.", 4});
+  explanation.push_back({"First Operand", regTitle[_Rd], "The first operand is often referred to as the 'destination' register.", 4});
 
   if (_flex.isImm()) {                                                                          // operand is immediate
     int imm = std::get<int>(_flex.Rm());
     instruction = (instruction << 4) | _flex.immShift();
-    explanation.push_back({"Barrel Shifter", "The amount by which the eight bit immediate value is rotated right.", 4});
+    explanation.push_back({"Barrel Shifter", (_flex.immShift() == 0 ? "Not Shifted" : "Rotated Right By " + std::to_string(_flex.immShift())), "The amount by which the eight bit immediate value is rotated right.", 4});
     instruction = (instruction << 8) | imm;
-    explanation.push_back({"Immediate", "An eight bit immediate value. This value, along with the barrel shift, forms the second operand.", 8});
+    explanation.push_back({"Immediate", "Value " + std::to_string(imm), "An eight bit immediate value. This value, along with the barrel shift, forms the second operand.", 8});
   }
   else if (_flex.isReg()) {                                                                     // operand is register
     if (_flex.shifted()) {                                                                      // operand is  optionally shifted
@@ -247,32 +247,32 @@ std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, int>>> BiO
       if (_flex.shiftedByReg()) {                                                               // shifted by register
         REGISTER shift = std::get<REGISTER>(_flex.Rs());
         instruction = (instruction << 4) | shift;
-        explanation.push_back({"Optional Shift Amount", "Shift by the value in " + regTitle[shift] + ".", 4});
+        explanation.push_back({"Optional Shift Amount", regTitle[shift], "Shift the flexible operand by the value in " + regTitle[shift] + ".", 4});
 
         instruction = (instruction << 2) | shiftOp;
-        explanation.push_back({"Optional Shift Operation", shiftTitle[shiftOp], 2});
+        explanation.push_back({"Optional Shift Operation", shiftTitle[shiftOp], "The type of shift to perform on the flexible operand.", 2});
         instruction = (instruction << 1) | 1;
-        explanation.push_back({"Optional Shift Type", "The flexible operand is optionally shifted by a register value.", 1});
+        explanation.push_back({"Optional Shift Type", "Register", "The flexible operand is optionally shifted by a register value.", 1});
       }
       else if (_flex.shiftedByImm()) {                                                          // shifted by immediate
         int shift = std::get<int>(_flex.Rs());
         instruction = (instruction << 5) | shift;
-        explanation.push_back({"Optional Shift Amount", "Shift by the provided five bit immediate value (" + std::to_string(shift) + ").", 5});
+        explanation.push_back({"Optional Shift Amount", "Immediate " + std::to_string(shift), "Shift by the provided five bit immediate value (" + std::to_string(shift) + ").", 5});
 
         instruction = ((instruction << 2) | shiftOp) << 1;
-        explanation.push_back({"Optional Shift Operation", shiftTitle[shiftOp], 2});
-        explanation.push_back({"Optional Shift Type", "The flexible operand is optionally shifted by an immediate value.", 1});
+        explanation.push_back({"Optional Shift Operation", shiftTitle[shiftOp], "The type of shift to perform on the flexible operand.", 2});
+        explanation.push_back({"Optional Shift Type", "Immediate", "The flexible operand is optionally shifted by an immediate value.", 1});
       }
       else throw AssemblyError("Optional shift operand Rs is neither a REGISTER nor IMMEDIATE value. Most likely a parser bug.", _statement, lineNumber());
     }
     else {                                                                                      // operand is not optionally shifted
       instruction <<= 8;
-      explanation.push_back({"No Optional Shift", "The flexible operand is not optionally shifted.", 8});
+      explanation.push_back({"No Optional Shift", "N/A", "The flexible operand is not optionally shifted.", 8});
     }
 
     REGISTER reg = std::get<REGISTER>(_flex.Rm());
     instruction = (instruction << 4) | reg;
-    explanation.push_back({"Flexible Operand", regTitle[reg] + ". This operand has special properties in ARMv7. It can be either an immediate value or an optionally shifted register.", 4});
+    explanation.push_back({"Flexible Operand", regTitle[reg], ". This operand has special properties in ARMv7. It can be either an immediate value or an optionally shifted register.", 4});
   }
   else throw AssemblyError("Source operand Rm is neither a REGISTER nor IMMEDIATE value. This is most likely a parser bug.", _statement, lineNumber());
 
@@ -301,34 +301,34 @@ TriOperandNode::TriOperandNode(std::vector<lexer::Token> statement) : Instructio
 /**
  * Assembles this instruction into the proper machine code that would execute it on an ARM device.
  */
-std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, int>>> TriOperandNode::assemble() {
+std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, std::string, int>>> TriOperandNode::assemble() {
   uint32_t instruction = 0;
-  std::vector<std::tuple<std::string, std::string, int>> explanation;
+  std::vector<std::tuple<std::string, std::string, std::string, int>> explanation;
 
   instruction = (instruction << 4) | _cond;
-  explanation.push_back({"Condition Code", condTitle[_cond] + ". " + condExplain[_cond], 4});
+  explanation.push_back({"Condition Code", condTitle[_cond], condExplain[_cond], 4});
 
   instruction <<= 3;                // logical shift left 8 for data processing
-  explanation.push_back({"Instruction Type", "Arithmetic Operation. Indicates the organisation of bits to the processor so that the instruction can be decoded.", 3});
+  explanation.push_back({"Instruction Type", "Arithmetic Operation", "Indicates the organisation of bits to the processor so that the instruction can be decoded.", 3});
 
   instruction = (instruction << 4) | _op;
-  explanation.push_back({"Operation Code", opTitle[_op] + ". " + opExplain[_op], 4});
+  explanation.push_back({"Operation Code", opTitle[_op], opExplain[_op], 4});
 
   instruction = (instruction << 1) | _setFlags;
-  explanation.push_back({"CPSR Flags", flagsExplain[_setFlags], 1});
+  explanation.push_back({"CPSR Flags", (_setFlags ? "Set" : "Not Set"), flagExplain[_setFlags], 1});
 
   instruction = (instruction << 4) | _Rn;
-  explanation.push_back({"Second Operand", regTitle[_Rn] + ". The second operand is often referred to as a 'source' register.", 4});
+  explanation.push_back({"Second Operand", regTitle[_Rn], "The second operand is often referred to as a 'source' register.", 4});
 
   instruction = (instruction << 4) | _Rd;
-  explanation.push_back({"First Operand", regTitle[_Rd] + ". The first operand is often referred to as the 'destination' register.", 4});
+  explanation.push_back({"First Operand", regTitle[_Rd], "The first operand is often referred to as the 'destination' register.", 4});
 
   if (_flex.isImm()) {                                                                          // operand is immediate
     int imm = std::get<int>(_flex.Rm());
     instruction = (instruction << 4) | _flex.immShift();
-    explanation.push_back({"Barrel Shifter", "The amount by which the eight bit immediate value is rotated right.", 4});
+    explanation.push_back({"Barrel Shifter", (_flex.immShift() == 0 ? "Not Shifted" : "Rotated Right By " + std::to_string(_flex.immShift())), "The amount by which the eight bit immediate value is rotated right.", 4});
     instruction = (instruction << 8) | imm;
-    explanation.push_back({"Immediate", "An eight bit immediate value. This value, along with the barrel shift, forms the second operand.", 8});
+    explanation.push_back({"Immediate", "Value " + std::to_string(imm), "An eight bit immediate value. This value, along with the barrel shift, forms the second operand.", 8});
   }
   else if (_flex.isReg()) {                                                                     // operand is register
     if (_flex.shifted()) {                                                                      // operand is  optionally shifted
@@ -336,32 +336,32 @@ std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, int>>> Tri
       if (_flex.shiftedByReg()) {                                                               // shifted by register
         REGISTER shift = std::get<REGISTER>(_flex.Rs());
         instruction = (instruction << 4) | shift;
-        explanation.push_back({"Optional Shift Amount", "Shift by the value in " + regTitle[shift] + ".", 4});
+        explanation.push_back({"Optional Shift Amount", regTitle[shift], "Shift by the value in " + regTitle[shift] + ".", 4});
 
         instruction = (instruction << 2) | shiftOp;
-        explanation.push_back({"Optional Shift Operation", shiftTitle[shiftOp], 2});
+        explanation.push_back({"Optional Shift Operation", shiftTitle[shiftOp], "The type of shift to perform on the flexible operand.", 2});
         instruction = (instruction << 1) | 1;
-        explanation.push_back({"Optional Shift Type", "The flexible operand is optionally shifted by a register value.", 1});
+        explanation.push_back({"Optional Shift Type", "Register", "The flexible operand is optionally shifted by a register value.", 1});
       }
       else if (_flex.shiftedByImm()) {                                                          // shifted by immediate
         int shift = std::get<int>(_flex.Rs());
         instruction = (instruction << 5) | shift;
-        explanation.push_back({"Optional Shift Amount", "Shift by the provided five bit immediate value (" + std::to_string(shift) + ").", 5});
+        explanation.push_back({"Optional Shift Amount", "Immediate " + std::to_string(shift), "Shift by the provided five bit immediate value (" + std::to_string(shift) + ").", 5});
 
         instruction = ((instruction << 2) | shiftOp) << 1;
-        explanation.push_back({"Optional Shift Operation", shiftTitle[shiftOp], 2});
-        explanation.push_back({"Optional Shift Type", "The flexible operand is optionally shifted by an immediate value.", 1});
+        explanation.push_back({"Optional Shift Operation", shiftTitle[shiftOp], "The type of shift to perform on the flexible operand.", 2});
+        explanation.push_back({"Optional Shift Type", "Immediate", "The flexible operand is optionally shifted by an immediate value.", 1});
       }
       else throw AssemblyError("Optional shift operand Rs is neither a REGISTER nor IMMEDIATE value. Most likely a parser bug.", _statement, lineNumber());
     }
     else {                                                                                      // operand is not optionally shifted
       instruction <<= 8;
-      explanation.push_back({"No Optional Shift", "The flexible operand is not optionally shifted.", 8});
+      explanation.push_back({"No Optional Shift", "N/A", "The flexible operand is not optionally shifted.", 8});
     }
 
     REGISTER reg = std::get<REGISTER>(_flex.Rm());
     instruction = (instruction << 4) | reg;
-    explanation.push_back({"Flexible Operand", regTitle[reg] + ". This operand has special properties in ARMv7. It can be either an immediate value or an optionally shifted register.", 4});
+    explanation.push_back({"Flexible Operand", regTitle[reg], "This operand has special properties in ARMv7. It can be either an immediate value or an optionally shifted register.", 4});
   }
   else throw AssemblyError("Source operand Rm is neither a REGISTER nor IMMEDIATE value. This is most likely a parser bug.", _statement, lineNumber());
 
@@ -403,8 +403,8 @@ std::variant<std::monostate, REGISTER, int> ShiftNode::parseRegOrImm() {
   return flex;
 }
 
-std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, int>>> ShiftNode::assemble() {
-  return {0, {{"", "", 0}}};
+std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, std::string, int>>> ShiftNode::assemble() {
+  return {0, {{"", "", "", 0}}};
 }
 
 
@@ -473,6 +473,9 @@ AllocationNode::AllocationNode(std::vector<lexer::Token> statement) : Node(state
   this->_identifier = peekToken().value().substr(0, nextToken().value().size() - 1);
 
   lexer::Token typeDirective = nextToken();
+  if (!syntax::typeMap.contains(typeDirective.value()))
+    throw SyntaxError("Expected a DIRECTIVE to declare type for '" + this->_identifier + "' variable - received " + lexer::tokenNames[typeDirective.type()] + " '" + typeDirective.value() + "' instead.", statement, lineNumber(), typeDirective.tokenNumber()); 
+
   int type = syntax::typeMap.at(typeDirective.value()).index();
   if (type == 0) {         // .skip
     this->_value.emplace<size_t>(parseImmediate(makeImmediate(nextToken()), 32));
@@ -495,6 +498,8 @@ AllocationNode::AllocationNode(std::vector<lexer::Token> statement) : Node(state
   }
 
   if (hasToken()) throw SyntaxError("Unexpected token '" + peekToken().value() + "' after valid data declaration end.", statement, lineNumber(), peekToken().tokenNumber());
+
+  throw DeveloperError("Variable declaration functionality is work in progress. Sorry about that.", statement, lineNumber(), -1);
 }
 
 lexer::Token AllocationNode::makeImmediate(lexer::Token token) {

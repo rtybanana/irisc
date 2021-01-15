@@ -13,41 +13,45 @@
  */ 
 class Error : public std::exception {
   protected:
-    std::string msg;
-    std::vector<lexer::Token> statement;
-    int tokenIndex;
+    std::string _msg;
+    std::vector<lexer::Token> _statement;
+    int _tokenIndex;
     int _lineNumber;
 
   public:
     Error(std::string msg, std::vector<lexer::Token> statement, int lineNumber, int tokenIndex) : 
       std::exception(),
-      msg(msg),
-      statement(statement),
+      _msg(msg),
+      _statement(statement),
       _lineNumber(lineNumber),
-      tokenIndex(tokenIndex) {};
+      _tokenIndex(tokenIndex) {};
     Error(std::string msg, int lineNumber) :
       std::exception(),
-      msg(msg),
+      _msg(msg),
       _lineNumber(lineNumber) {};
+    
     virtual const char* what() const noexcept override = 0;
     std::string constructHelper() const;
+    std::string msg() const { return _msg; };
+    std::vector<lexer::Token> statement() const { return _statement; };
     int lineNumber() const { return _lineNumber; };
+    int tokenIndex() const { return _tokenIndex; };
 };
 
 inline std::string Error::constructHelper() const {
   std::string helper = "";
-  for (int i = 0; i < statement.size(); i++) {
+  for (int i = 0; i < _statement.size(); i++) {
     std::stringstream oss;
-    bool problemToken = i == tokenIndex;
-    oss << (statement[i].type() == lexer::COMMA ? "" : " ")
+    bool problemToken = i == _tokenIndex;
+    oss << (_statement[i].type() == lexer::COMMA ? "" : " ")
         << (problemToken ? "\e[1;3;4m" : "")
-        << statement[i].value()
+        << _statement[i].value()
         << (problemToken ? "\e[0m" : "");
 
     helper += oss.str();  
   }
 
-  return helper;
+  return std::to_string(_lineNumber) + ": " + helper;
 }
 
 
@@ -56,41 +60,39 @@ inline std::string Error::constructHelper() const {
  */ 
 class LexicalError : public Error{
   protected:
-    std::string msg;
-    std::string statementStr;
-    int symbolIndex;
-    int _lineNumber;
+    std::string _statementStr;
+    int _symbolIndex;
 
   public:
     LexicalError(std::string msg, std::string statementStr, int lineNumber, int symbolIndex) : 
       Error(msg, lineNumber),
-      // msg(msg),
-      statementStr(statementStr),
-      // _lineNumber(lineNumber),
-      symbolIndex(symbolIndex)
+      _statementStr(statementStr),
+      _symbolIndex(symbolIndex)
     {};
     const char* what() const noexcept override;
     std::string constructHelper() const;
+    std::string statementStr() const { return _statementStr; };
+    int symbolIndex() const { return _symbolIndex; };
 };
 
 inline std::string LexicalError::constructHelper() const {
   std::string helper = "";
-  for (int i = 0; i < statementStr.size(); i++) {
+  for (int i = 0; i < _statementStr.size(); i++) {
     std::stringstream oss;
-    bool problemToken = i == symbolIndex;
+    bool problemToken = i == _symbolIndex;
     oss << (problemToken ? "\e[1;3;4m" : "")
-        << statementStr[i]
+        << _statementStr[i]
         << (problemToken ? "\e[0m" : "");
 
     helper += oss.str();  
   }
 
-  return helper;
+  return std::to_string(_lineNumber) + ": " + helper;
 }
 
 inline const char* LexicalError::what() const noexcept {
   std::stringstream stream;
-  stream << "\033[91mLexical Error\033[0m: " << msg << "\n\t" << constructHelper();
+  stream << "\033[91mLexical Error\033[0m: " << _msg << "\n\t" << constructHelper();
 
   std::string* out = new std::string(stream.str());
   return out->c_str();
@@ -109,7 +111,7 @@ class SyntaxError : public Error {
 
 inline const char* SyntaxError::what() const noexcept {
   std::stringstream stream;
-  stream << "\033[91mSyntax Error\033[0m: " << msg << "\n\t" << constructHelper();
+  stream << "\033[91mSyntax Error\033[0m: " << _msg << "\n\t" << constructHelper();
 
   std::string* out = new std::string(stream.str());
   return out->c_str();
@@ -128,7 +130,7 @@ class NumericalError : public Error {
 
 inline const char* NumericalError::what() const noexcept {
   std::stringstream stream;
-  stream << "\033[91mNumerical Error\033[0m: " << msg << "\n\t" << constructHelper();
+  stream << "\033[91mNumerical Error\033[0m: " << _msg << "\n\t" << constructHelper();
 
   std::string* out = new std::string(stream.str());
   return out->c_str();
@@ -147,7 +149,7 @@ class AssemblyError : public Error {
 
 inline const char* AssemblyError::what() const noexcept {
   std::stringstream stream;
-  stream << "\033[91mAssembly Error\033[0m: " << msg << "\n\t" << constructHelper();
+  stream << "\033[91mAssembly Error\033[0m: " << _msg << "\n\t" << constructHelper();
 
   std::string* out = new std::string(stream.str());
   return out->c_str();
@@ -161,12 +163,14 @@ class RuntimeError : public Error {
   public:
     RuntimeError(std::string msg, std::vector<lexer::Token> statement, int lineNumber, int tokenIndex)
       : Error(msg, statement, lineNumber, tokenIndex) {};
+    RuntimeError(std::string msg)
+      : Error(msg, std::vector<lexer::Token>(), -1, -1) {};
     const char* what() const noexcept override;
 };
 
 inline const char* RuntimeError::what() const noexcept {
   std::stringstream stream;
-  stream << "\033[91mRuntime Error\033[0m: " << msg << "\n\t" << constructHelper();
+  stream << "\033[91mRuntime Error\033[0m: " << _msg << "\n\t" << constructHelper();
 
   std::string* out = new std::string(stream.str());
   return out->c_str();
@@ -185,7 +189,26 @@ class InteractiveError : public Error {
 
 inline const char* InteractiveError::what() const noexcept {
   std::stringstream stream;
-  stream << "\033[91mInteractive Error\033[0m: " << msg << "\n\t" << constructHelper();
+  stream << "\033[91mInteractive Error\033[0m: " << _msg << "\n\t" << constructHelper();
+
+  std::string* out = new std::string(stream.str());
+  return out->c_str();
+}
+
+
+/**
+ * DeveloperError class - tongue in cheek class for when the user tries to access WIP functionality
+ */
+class DeveloperError : public Error {
+  public:
+    DeveloperError(std::string msg, std::vector<lexer::Token> statement, int lineNumber, int tokenIndex)
+      : Error(msg, statement, lineNumber, tokenIndex) {};
+    const char* what() const noexcept override;
+};
+
+inline const char* DeveloperError::what() const noexcept {
+  std::stringstream stream;
+  stream << "\033[91mDeveloper Error\033[0m: " << _msg << "\n\t" << constructHelper();
 
   std::string* out = new std::string(stream.str());
   return out->c_str();

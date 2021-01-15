@@ -108,22 +108,22 @@ Token Lexer::nextToken(std::string &program, unsigned int &current_index, unsign
       current_index--;
     }
 
-    if(current_state == -1 && tokens.size() > 1) {
-      std::string::reverse_iterator rLineStart = std::find_if(program.rbegin() + program.size() - errorIndex, program.rend(), [](char c){ return c == '\n' || c == std::string::npos; });
+    if(current_state == -1) {
+      std::string::reverse_iterator rLineStart = std::find_if(program.rbegin() + program.size() - (errorIndex + 2), program.rend(), [](char c){ return c == '\n' || c == std::string::npos; });
       std::string::iterator lineStart = rLineStart.base();
       std::string statement(lineStart, std::find_if(lineStart, program.end(), [](char c){ return c == '\n' || c == std::string::npos; }));
 
       int startIndex = lineStart - program.begin();
       errorIndex = errorIndex - startIndex;
 
-      throw LexicalError("Invalid token starting at position " + std::to_string(errorIndex + 1) + ".", statement, errorIndex + 1, lineIndex);
+      throw LexicalError("Invalid token starting at position " + std::to_string(errorIndex + 2) + ".", statement, lineIndex, errorIndex + 1);
     }
 
     if(current_state >= 0 && f_states[current_state]) {
       return Token(current_state, std::move(lexeme), lineIndex, tokenIndex++);
     }
     else {
-      throw LexicalError("Starting character is not recognised.", program, errorIndex, lineIndex);
+      throw LexicalError("Starting character is not recognised.", program, lineIndex, errorIndex);
     }
 }
 

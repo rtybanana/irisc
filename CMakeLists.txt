@@ -60,10 +60,45 @@ find_package(Catch2 REQUIRED)
 
 add_executable(
   tests 
+  src/cmd/repl.cpp
+  src/cmd/repl.h
+  src/cmd/util.c
+  src/cmd/util.h
+  src/cmd/constants.h
+  src/lexer/lexer.cpp
+  src/lexer/lexer.h
+  src/lexer/token.cpp
+  src/lexer/token.h
+  src/parser/parser.cpp
+  src/parser/parser.h
+  src/parser/syntax.cpp
+  src/parser/syntax.h
+  src/parser/constants.h
+  src/emulator/emulator.cpp
+  src/emulator/emulator.h
+  src/emulator/gui/registers.cpp
+  src/emulator/gui/registers.h
+  src/emulator/gui/memory.cpp
+  src/emulator/gui/memory.h
+  src/emulator/gui/instruction.cpp
+  src/emulator/gui/instruction.h
+  src/emulator/gui/editor.cpp
+  src/emulator/gui/editor.h
+  src/emulator/gui/constants.h
+  src/widgets/hoverbox.cpp
+  src/widgets/hoverbox.h
   tests/lexer.cpp
+  tests/parser.cpp
+  tests/vm.cpp
+  tests/integration.cpp
 )
 
+target_include_directories(tests PUBLIC ${FLTK_INCLUDE_DIRS})
+
 target_link_libraries(tests Catch2::Catch2WithMain)
+target_link_libraries(tests fltk)
+target_link_libraries(tests ${OPENGL_LIBRARIES})
+target_link_libraries(tests replxx)
 
 include(CTest)
 include(Catch)

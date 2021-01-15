@@ -21,30 +21,6 @@
 
 namespace vm {
 
-  //******************************************************************************************
-  // CPSR FLAGS
-  enum FLAG {
-    N,  // negative
-    Z,  // zero
-    C,  // carry
-    V   // overflow
-  };
-
-  static std::map<FLAG, std::string> flagShortName {
-    {N, "N"}, {Z, "Z"}, {C, "C"}, {V, "V"}
-  };
-
-  static std::map<FLAG, std::string> flagTitle {
-    {N, "Negative Flag (N)"}, {Z, "Zero Flag (Z)"}, {C, "Carry Flag (C)"}, {V, "Overflow Flag (V)"}
-  };
-
-  static std::map<FLAG, std::string> flagExplain {
-    {N, "This bit is set when the signed result of the operation is negative."}, 
-    {Z, "This bit is set when the result of the operation is equal to zero."}, 
-    {C, "This bit is set when the operation results in an unsigned overflow."}, 
-    {V, "This bit is set when the operation results in a signed overflow."}
-  };
-
   class Registers : public Fl_Group {
     private:
 
@@ -85,9 +61,10 @@ namespace vm {
       Fl_Box* _title;
       Fl_Box* _details;
       bool _running;
+      bool headless;
 
     public:
-      Registers(int, int);
+      Registers(int, int, bool = false);
       // void linkEmulator(Emulator* emulator) { this->emulator = emulator; };
       void running(bool running) { _running = running; };
       void update();
@@ -97,7 +74,11 @@ namespace vm {
       void setFlags(uint32_t, uint32_t, uint64_t, char _operator = ' ');
       bool checkFlags(syntax::CONDITION);
       void describe(std::string, std::string);
+      void print();
+      void printIndex(int);
+      void printCPSR();
       proxy& operator[] (int index) { return registers[index]; };
+      bool operator[] (syntax::FLAG flag) { return cpsr[flag]; };
   };
 
 }

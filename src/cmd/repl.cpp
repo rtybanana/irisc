@@ -22,7 +22,7 @@
 #include "util.h"
 
 using Replxx = replxx::Replxx;
-using namespace ui;
+using namespace cmd;
 
 REPL::REPL(Replxx& rx) : rx(rx), ops(), complexOps(), conds(), regs() {
 	rx.install_window_change_handler();
@@ -41,9 +41,9 @@ REPL::REPL(Replxx& rx) : rx(rx), ops(), complexOps(), conds(), regs() {
 
 	// set the callbacks
 	using namespace std::placeholders;
-	rx.set_completion_callback(std::bind( &ui::REPL::hook_completion, this, _1, _2));
-	rx.set_highlighter_callback(std::bind( &ui::REPL::hook_color, this, _1, _2));
-	rx.set_hint_callback(std::bind( &ui::REPL::hook_hint, this, _1, _2, _3));
+	rx.set_completion_callback(std::bind( &cmd::REPL::hook_completion, this, _1, _2));
+	rx.set_highlighter_callback(std::bind( &cmd::REPL::hook_color, this, _1, _2));
+	rx.set_hint_callback(std::bind( &cmd::REPL::hook_hint, this, _1, _2, _3));
 
 	// other api calls
 	// rx.set_word_break_characters( " \t.,-%!;:=*~^'\"/?<>|[](){}" );
@@ -93,53 +93,53 @@ REPL::REPL(Replxx& rx) : rx(rx), ops(), complexOps(), conds(), regs() {
 	rx.bind_key_internal( Replxx::KEY::meta( 'c' ),                    "capitalize_word" );
 	rx.bind_key_internal( 'a',                                         "insert_character" );
 	rx.bind_key_internal( Replxx::KEY::INSERT,                         "toggle_overwrite_mode" );
-	rx.bind_key( Replxx::KEY::F1, std::bind( &ui::REPL::message, this, std::ref( rx ), "<F1>", _1 ) );
-	rx.bind_key( Replxx::KEY::F2, std::bind( &ui::REPL::message, this, std::ref( rx ), "<F2>", _1 ) );
-	rx.bind_key( Replxx::KEY::F3, std::bind( &ui::REPL::message, this, std::ref( rx ), "<F3>", _1 ) );
-	rx.bind_key( Replxx::KEY::F4, std::bind( &ui::REPL::message, this, std::ref( rx ), "<F4>", _1 ) );
-	rx.bind_key( Replxx::KEY::F5, std::bind( &ui::REPL::message, this, std::ref( rx ), "<F5>", _1 ) );
-	rx.bind_key( Replxx::KEY::F6, std::bind( &ui::REPL::message, this, std::ref( rx ), "<F6>", _1 ) );
-	rx.bind_key( Replxx::KEY::F7, std::bind( &ui::REPL::message, this, std::ref( rx ), "<F7>", _1 ) );
-	rx.bind_key( Replxx::KEY::F8, std::bind( &ui::REPL::message, this, std::ref( rx ), "<F8>", _1 ) );
-	rx.bind_key( Replxx::KEY::F9, std::bind( &ui::REPL::message, this, std::ref( rx ), "<F9>", _1 ) );
-	rx.bind_key( Replxx::KEY::F10, std::bind( &ui::REPL::message, this, std::ref( rx ), "<F10>", _1 ) );
-	rx.bind_key( Replxx::KEY::F11, std::bind( &ui::REPL::message, this, std::ref( rx ), "<F11>", _1 ) );
-	rx.bind_key( Replxx::KEY::F12, std::bind( &ui::REPL::message, this, std::ref( rx ), "<F12>", _1 ) );
-	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::F2 ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<S-F2>", _1 ) );
-	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::F3 ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<S-F3>", _1 ) );
-	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::F4 ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<S-F4>", _1 ) );
-	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::F5 ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<S-F5>", _1 ) );
-	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::F6 ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<S-F6>", _1 ) );
-	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::F1 ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<S-F1>", _1 ) );
-	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::F7 ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<S-F7>", _1 ) );
-	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::F8 ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<S-F8>", _1 ) );
-	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::F9 ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<S-F9>", _1 ) );
-	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::F10 ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<S-F10>", _1 ) );
-	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::F11 ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<S-F11>", _1 ) );
-	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::F12 ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<S-F12>", _1 ) );
-	rx.bind_key( Replxx::KEY::control( Replxx::KEY::F1 ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<C-F1>", _1 ) );
-	rx.bind_key( Replxx::KEY::control( Replxx::KEY::F2 ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<C-F2>", _1 ) );
-	rx.bind_key( Replxx::KEY::control( Replxx::KEY::F3 ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<C-F3>", _1 ) );
-	rx.bind_key( Replxx::KEY::control( Replxx::KEY::F4 ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<C-F4>", _1 ) );
-	rx.bind_key( Replxx::KEY::control( Replxx::KEY::F5 ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<C-F5>", _1 ) );
-	rx.bind_key( Replxx::KEY::control( Replxx::KEY::F6 ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<C-F6>", _1 ) );
-	rx.bind_key( Replxx::KEY::control( Replxx::KEY::F7 ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<C-F7>", _1 ) );
-	rx.bind_key( Replxx::KEY::control( Replxx::KEY::F8 ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<C-F8>", _1 ) );
-	rx.bind_key( Replxx::KEY::control( Replxx::KEY::F9 ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<C-F9>", _1 ) );
-	rx.bind_key( Replxx::KEY::control( Replxx::KEY::F10 ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<C-F10>", _1 ) );
-	rx.bind_key( Replxx::KEY::control( Replxx::KEY::F11 ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<C-F11>", _1 ) );
-	rx.bind_key( Replxx::KEY::control( Replxx::KEY::F12 ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<C-F12>", _1 ) );
-	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::TAB ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<S-Tab>", _1 ) );
-	rx.bind_key( Replxx::KEY::control( Replxx::KEY::HOME ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<C-Home>", _1 ) );
-	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::HOME ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<S-Home>", _1 ) );
-	rx.bind_key( Replxx::KEY::control( Replxx::KEY::END ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<C-End>", _1 ) );
-	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::END ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<S-End>", _1 ) );
-	rx.bind_key( Replxx::KEY::control( Replxx::KEY::PAGE_UP ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<C-PgUp>", _1 ) );
-	rx.bind_key( Replxx::KEY::control( Replxx::KEY::PAGE_DOWN ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<C-PgDn>", _1 ) );
-	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::LEFT ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<S-Left>", _1 ) );
-	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::RIGHT ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<S-Right>", _1 ) );
-	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::UP ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<S-Up>", _1 ) );
-	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::DOWN ), std::bind( &ui::REPL::message, this, std::ref( rx ), "<S-Down>", _1 ) );
+	rx.bind_key( Replxx::KEY::F1, std::bind( &cmd::REPL::message, this, std::ref( rx ), "<F1>", _1 ) );
+	rx.bind_key( Replxx::KEY::F2, std::bind( &cmd::REPL::message, this, std::ref( rx ), "<F2>", _1 ) );
+	rx.bind_key( Replxx::KEY::F3, std::bind( &cmd::REPL::message, this, std::ref( rx ), "<F3>", _1 ) );
+	rx.bind_key( Replxx::KEY::F4, std::bind( &cmd::REPL::message, this, std::ref( rx ), "<F4>", _1 ) );
+	rx.bind_key( Replxx::KEY::F5, std::bind( &cmd::REPL::message, this, std::ref( rx ), "<F5>", _1 ) );
+	rx.bind_key( Replxx::KEY::F6, std::bind( &cmd::REPL::message, this, std::ref( rx ), "<F6>", _1 ) );
+	rx.bind_key( Replxx::KEY::F7, std::bind( &cmd::REPL::message, this, std::ref( rx ), "<F7>", _1 ) );
+	rx.bind_key( Replxx::KEY::F8, std::bind( &cmd::REPL::message, this, std::ref( rx ), "<F8>", _1 ) );
+	rx.bind_key( Replxx::KEY::F9, std::bind( &cmd::REPL::message, this, std::ref( rx ), "<F9>", _1 ) );
+	rx.bind_key( Replxx::KEY::F10, std::bind( &cmd::REPL::message, this, std::ref( rx ), "<F10>", _1 ) );
+	rx.bind_key( Replxx::KEY::F11, std::bind( &cmd::REPL::message, this, std::ref( rx ), "<F11>", _1 ) );
+	rx.bind_key( Replxx::KEY::F12, std::bind( &cmd::REPL::message, this, std::ref( rx ), "<F12>", _1 ) );
+	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::F2 ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<S-F2>", _1 ) );
+	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::F3 ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<S-F3>", _1 ) );
+	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::F4 ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<S-F4>", _1 ) );
+	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::F5 ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<S-F5>", _1 ) );
+	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::F6 ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<S-F6>", _1 ) );
+	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::F1 ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<S-F1>", _1 ) );
+	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::F7 ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<S-F7>", _1 ) );
+	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::F8 ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<S-F8>", _1 ) );
+	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::F9 ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<S-F9>", _1 ) );
+	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::F10 ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<S-F10>", _1 ) );
+	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::F11 ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<S-F11>", _1 ) );
+	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::F12 ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<S-F12>", _1 ) );
+	rx.bind_key( Replxx::KEY::control( Replxx::KEY::F1 ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<C-F1>", _1 ) );
+	rx.bind_key( Replxx::KEY::control( Replxx::KEY::F2 ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<C-F2>", _1 ) );
+	rx.bind_key( Replxx::KEY::control( Replxx::KEY::F3 ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<C-F3>", _1 ) );
+	rx.bind_key( Replxx::KEY::control( Replxx::KEY::F4 ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<C-F4>", _1 ) );
+	rx.bind_key( Replxx::KEY::control( Replxx::KEY::F5 ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<C-F5>", _1 ) );
+	rx.bind_key( Replxx::KEY::control( Replxx::KEY::F6 ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<C-F6>", _1 ) );
+	rx.bind_key( Replxx::KEY::control( Replxx::KEY::F7 ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<C-F7>", _1 ) );
+	rx.bind_key( Replxx::KEY::control( Replxx::KEY::F8 ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<C-F8>", _1 ) );
+	rx.bind_key( Replxx::KEY::control( Replxx::KEY::F9 ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<C-F9>", _1 ) );
+	rx.bind_key( Replxx::KEY::control( Replxx::KEY::F10 ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<C-F10>", _1 ) );
+	rx.bind_key( Replxx::KEY::control( Replxx::KEY::F11 ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<C-F11>", _1 ) );
+	rx.bind_key( Replxx::KEY::control( Replxx::KEY::F12 ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<C-F12>", _1 ) );
+	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::TAB ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<S-Tab>", _1 ) );
+	rx.bind_key( Replxx::KEY::control( Replxx::KEY::HOME ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<C-Home>", _1 ) );
+	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::HOME ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<S-Home>", _1 ) );
+	rx.bind_key( Replxx::KEY::control( Replxx::KEY::END ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<C-End>", _1 ) );
+	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::END ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<S-End>", _1 ) );
+	rx.bind_key( Replxx::KEY::control( Replxx::KEY::PAGE_UP ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<C-PgUp>", _1 ) );
+	rx.bind_key( Replxx::KEY::control( Replxx::KEY::PAGE_DOWN ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<C-PgDn>", _1 ) );
+	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::LEFT ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<S-Left>", _1 ) );
+	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::RIGHT ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<S-Right>", _1 ) );
+	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::UP ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<S-Up>", _1 ) );
+	rx.bind_key( Replxx::KEY::shift( Replxx::KEY::DOWN ), std::bind( &cmd::REPL::message, this, std::ref( rx ), "<S-Down>", _1 ) );
 
 	fetchTokens();
 }
@@ -172,13 +172,13 @@ void REPL::fetchTokens() {
 	}
 }
 
-void REPL::loop(vm::Emulator &emulator) {
+void REPL::cmdloop(vm::Emulator &emulator) {
 	// Editor editor(emulator);
-	std::cout << "\e[1miRISC\e[0m 0.0.1  [22nd Nov, 2020]" << std::endl;
-  std::cout << "Type \":h\" for more information.\n" << std::endl;
+	std::cout << "\e[95miRISC\e[0m 0.0.1  [22nd Nov, 2020]" << std::endl;
+  std::cout << "Type \"help\" for more information.\n" << std::endl;
 
 	// set the repl prompt
-	std::string prompt {"\033[32miRISC\033[0m \033[95m.text\033[0m$ "};
+	std::string prompt {"\033[95miRISC\033[0m:~$ "};
 
 	// main repl loop
 	for (;;) {
@@ -200,18 +200,20 @@ void REPL::loop(vm::Emulator &emulator) {
 		if (input == "") continue;
 
 		// quit command
-		if (input == ":q"){
+		if (input == "exit" || input == "x"){
 			rx.history_add(input);
 			break;
 		}
 
-		if (input == ":r" || input == ":reset") {
+		if (input == "reset" || input == "!") {
 			rx.history_add(input);
 			emulator.reset();
+			std::cout << "\tiRISC emulator has been reset." << std::endl;
+			// emulator.printRegisters();
 		}
 
 		// help command
-		else if(input == ":h"){
+		else if(input == "help" || input == "h"){
 			rx.history_add(input);
 			std::cout << "\n" << "                            Welcome to " << 
 															"\033[3m" << "i" << "\033[0m" << "\033[1m" << "RISC"  << "\033[0m ";
@@ -220,40 +222,41 @@ void REPL::loop(vm::Emulator &emulator) {
 			std::cout <<         "To use this interactive console, just type in regular ARMv7 assembly code and     \n";
 			std::cout <<         "hit enter. You can also make use of the following commands: \n\n";
 
-			std::cout <<         " :load \e[1;3;4mfile-path\e[0m  ";
-			std::cout <<         "Loads variable and function declarations from a specified\n";
-			std::cout <<         std::setw(18);
-			std::cout <<         "" << "file into memory, e.g.\n";
-			std::cout <<         std::setw(18);
-			std::cout <<         "" << ">>> #load ~/hello_world.s\n\n";
-			std::cout <<         " :q               Exits the interactive RISC program.\n\n";
-			std::cout <<         " :c               Clears the terminal window." << std::endl;
+			std::cout << 				 " \033[1;3;4mARMv7 Instruction\033[0m  Performs the instruction and prints the result to the console. \n";
+			std::cout <<         " registers/r    "       <<       "    Prints the current registers to the console.\n";
+			std::cout <<         " assemble/a     "       <<       "    Prints the assembly code for the previous instruction.\n";
+			std::cout <<         " clear/c        "       <<       "    Clears the terminal window. \n";
+			std::cout <<         " reset/!        "       <<       "    Resets the registers to their default values. \n";
+			std::cout <<         " exit/x         "       <<       "    Exits the interactive RISC program.\n\n";
 		}
 
 		// clear screen commands
-		else if(input == ":c"){
+		else if(input == "clear" || input == "c"){
 			rx.history_add(input);
 			std::cout << std::string(50, '\n');
 		}
 
-		else if (input == ":e" || input == ":editor") {
-			// emulator.toggleEditor();
+		// else if (input == ":e" || input == ":editor") {
+		// 	// emulator.toggleEditor();
+		// }
+
+		else if (input == "registers" || input == "r") {
+			emulator.printRegisters();
 		}
 
-		else if (input == ".text") {
-			prompt = "\033[32miRISC\033[0m \033[95m.text\033[0m$ ";
-			emulator.mode(vm::TEXT);
+		else if (input == "cpsr" || input == "flags" || input == "f") {
+			emulator.printCPSR();
 		}
-		else if (input == ".data") {
-			prompt = "\033[32miRISC\033[0m \033[95m.data\033[0m$ ";
-			emulator.mode(vm::DATA);
+
+		else if (input == "assemble" || input == "a") {
+			emulator.assembleLast();
 		}
 
 		// Parse as assembler
 		else {
 			emulator.execute(input);
-			rx.history_add(input);
-		}
+			rx.history_add(input);							// add to history regardless
+		}	
 	}
 
 	rx.history_sync(history_file);

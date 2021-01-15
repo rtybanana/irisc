@@ -11,7 +11,7 @@
 
 using namespace vm;
 
-Emulator::Emulator() : memory(), registers(0, 0), instruction(0, 0), _running(false), _paused(false), _step(false), delay(1) {
+Emulator::Emulator(bool headless) : memory(), registers(0, 0, headless), instruction(0, 0, headless), _running(false), _paused(false), _step(false), delay(1) {
   editor = new Editor(0, 0, this);
 
   Fl::lock();
@@ -35,23 +35,9 @@ Emulator::Emulator() : memory(), registers(0, 0), instruction(0, 0), _running(fa
     
     window->end();
     window->callback(vm::close_cb);
-    window->show();
+    if (!headless) window->show();
+    else window->hide();
 
-    // registers_w = new Fl_Window(240,540,"Registers");
-    // registers_w->add(&registers);
-    // registers_w->end();
-    // registers_w->show();
-
-    // instruction_w = new Fl_Window(500,160,"Machine Code");
-    // instruction_w->add(&instruction);
-    // instruction_w->end();
-    // instruction_w->show();
-
-    // editor_w = new Fl_Window(280, 350, "Editor");
-    // editor_w->color(fl_rgb_color(uchar(35)));
-    // editor_w->add(editor);
-    // editor_w->end();
-    // editor_w->show();
   Fl::unlock();
 
   Fl::awake();
@@ -59,17 +45,17 @@ Emulator::Emulator() : memory(), registers(0, 0), instruction(0, 0), _running(fa
 
 
 void Emulator::reset() {
-  registers.clear();
+  registers.reset();
   // stack.reset();
 }
 
 void Emulator::execute(std::string statement) {
   try {
     lexer::Lexer lexer(statement);
-    parser::Parser parser(lexer);
+    syntax::Parser parser(lexer);
     syntax::Node* node = parser.parseSingle();
 
-    if (node != nullptr) execute(node);
+    if (node != nullptr) execute(node, true);
     free(node);
   }
   // Catch exception and print error
@@ -81,19 +67,19 @@ void Emulator::execute(std::string statement) {
 /**
  * Driver function to execute any instruction with a base class of InstructionNode
  */
-void Emulator::execute(syntax::Node* node) {
+void Emulator::execute(syntax::Node* node, bool response) {
   registers.prepare();
 
   if (dynamic_cast<syntax::InstructionNode*>(node)) {
     bool executed = false;
     if (dynamic_cast<syntax::BiOperandNode*>(node)) {
-      executed = executeBiOperand(dynamic_cast<syntax::BiOperandNode*>(node));
+      executed = executeBiOperand(dynamic_cast<syntax::BiOperandNode*>(node), response);
     }
     else if (dynamic_cast<syntax::TriOperandNode*>(node)) {
-      executed = executeTriOperand(dynamic_cast<syntax::TriOperandNode*>(node));
+      executed = executeTriOperand(dynamic_cast<syntax::TriOperandNode*>(node), response);
     }
     else if (dynamic_cast<syntax::ShiftNode*>(node)) {
-      executed = executeShift(dynamic_cast<syntax::ShiftNode*>(node));
+      executed = executeShift(dynamic_cast<syntax::ShiftNode*>(node), response);
     }
 
     instruction.set(dynamic_cast<syntax::InstructionNode*>(node), executed);
@@ -103,8 +89,9 @@ void Emulator::execute(syntax::Node* node) {
 
   }
   else if (dynamic_cast<syntax::LabelNode*>(node)) {
-    throw InteractiveError("Label instructions are not executable on their own. Try using the editor (:editor) to execute multiple lines.", node->statement(), 0, node->lineNumber());
+    throw InteractiveError("Label instructions are not executable on their own. Try using the GUI editor environment to execute simple assembly programs with branches.", node->statement(), node->lineNumber(), 0);
   }
+
 }
 
 /**
@@ -115,7 +102,7 @@ void Emulator::compile(std::string program) {
 
   try {
     lexer::Lexer lexer(program);
-    parser::Parser parser(lexer);
+    syntax::Parser parser(lexer);
     std::vector<syntax::Node*> nodes = parser.parseMultiple();
 
     start(nodes, false);
@@ -134,7 +121,7 @@ void Emulator::run(std::string program) {
 
   try {
     lexer::Lexer lexer(program);
-    parser::Parser parser(lexer);
+    syntax::Parser parser(lexer);
     std::vector<syntax::Node*> nodes = parser.parseMultiple();
 
     start(nodes);
@@ -220,7 +207,7 @@ void Emulator::run() {
   while (running()) {
     _step = false;                                                              // revert step to false so that instruction is only advanced once if stepping
     syntax::InstructionNode* node = memory.instruction(registers[syntax::PC]);
-    std::cout << "PC: " << registers[syntax::PC] << ": " << node->toString() << std::endl;
+    // std::cout << "PC: " << registers[syntax::PC] << ": " << node->toString() << std::endl;
     editor->highlightLine(node->statement()[0].lineNumber());
 
     
@@ -240,18 +227,14 @@ void Emulator::run() {
       std::this_thread::sleep_for(std::chrono::milliseconds(sleepfor));
       sleptfor += sleepfor;
     }
-
-    std::cout << "advancing instruction" << std::endl;
   }
 
-  std::cout << "finished running" << std::endl;
   running(false);
 }
 
 
 void Emulator::running(bool running) { 
   if (!running) {
-    std::cout << "cleaning up gui" << std::endl;
     _paused = false;
     registers.prepare();
   }
@@ -297,7 +280,7 @@ uint32_t Emulator::deflex(syntax::FlexOperand flex) {
     if (flex.shiftedByImm()) shiftBy = std::get<int>(flex.Rs());                  // get value of immediate shift
     else shiftBy = registers[std::get<syntax::REGISTER>(flex.Rs())];              // get value in shift register
 
-    deflex = applyFlexShift(flex.shift(), deflex, shiftBy);                           // apply the unpacked shift
+    deflex = applyFlexShift(flex.shift(), deflex, shiftBy);                       // apply the unpacked shift
   }
   
   return deflex;
@@ -313,15 +296,17 @@ uint32_t Emulator::applyFlexShift(syntax::SHIFT shift, int value, int amount) {
     case syntax::LSR:
       if (amount == 0) amount = 32;       // special case for right shifts
       return value >>= amount;
+    case syntax::ROR:
+      return std::rotr((uint32_t)value, amount);
     default:
-      throw std::runtime_error("");
+      throw RuntimeError("While attempting to perform a flex operand optional shift.");
   }
 }
 
 /**
  * Executes any bi-operand instruction such as MOV, MVN and comparisions CMP, TST etc
  */
-bool Emulator::executeBiOperand(syntax::BiOperandNode* instruction) {
+bool Emulator::executeBiOperand(syntax::BiOperandNode* instruction, bool response) {
   auto [op, cond, set, dest, flex] = instruction->unpack();           // unpack the instruction
   if (!registers.checkFlags(cond)) return false;                            // returns early if condition code is not satisfied
 
@@ -347,7 +332,12 @@ bool Emulator::executeBiOperand(syntax::BiOperandNode* instruction) {
     case syntax::TEQ:
       registers.setFlags(registers[dest], src, (uint64_t)registers[dest] ^ src);
       break;
-  } 
+  }
+
+  if (response) {
+    if (op == syntax::MOV || op == syntax::MVN) registers.printIndex(dest); 
+    if (set) registers.printCPSR();
+  }
 
   return true;
 }
@@ -356,7 +346,7 @@ bool Emulator::executeBiOperand(syntax::BiOperandNode* instruction) {
  * TODO: implement arithmetic with carry (ADC SBC and RSC)
  * Executes any tri-operand arithmetic opereration (besides shifts)
  */
-bool Emulator::executeTriOperand(syntax::TriOperandNode* instruction) {
+bool Emulator::executeTriOperand(syntax::TriOperandNode* instruction, bool response) {
   auto [op, cond, set, dest, src, flex] = instruction->unpack();    // unpack the instruction
   if (!registers.checkFlags(cond)) return false;                          // returns early if condition code is not satisfied
 
@@ -387,12 +377,31 @@ bool Emulator::executeTriOperand(syntax::TriOperandNode* instruction) {
     case syntax::RSB:
       if (set) registers.setFlags(m, n, (uint64_t)m - n, '-');
       result = m - n;
+      break;
     case syntax::BIC:
       if (set) registers.setFlags(m, n, (uint64_t)n & (~m));
       result = n & (~m);
+      break;
+    case syntax::ADC:
+      result = n + m + (registers[syntax::C] ? 1 : 0);
+      if (set) registers.setFlags(n, m, (uint64_t)n + m + (registers[syntax::C] ? 1 : 0), '+');
+      break;
+    case syntax::SBC:
+      result = n - m - (registers[syntax::C] ? 0 : 1);
+      if (set) registers.setFlags(n, m, (uint64_t)n - m - (registers[syntax::C] ? 0 : 1), '-');
+      break;
+    case syntax::RSC:
+      result = m - n - (registers[syntax::C] ? 0 : 1);
+      if (set) registers.setFlags(n, m, (uint64_t)m - n - (registers[syntax::C] ? 0 : 1), '-');
+      break;
   } 
 
   registers[dest] = result;
+  if (response) {
+    registers.printIndex(dest); 
+    if (set) registers.printCPSR();
+  }
+
   return true;
 }
 
@@ -400,7 +409,7 @@ bool Emulator::executeTriOperand(syntax::TriOperandNode* instruction) {
  * TODO: implement ASR and ROR
  * Executes a shift operation
  */ 
-bool Emulator::executeShift(syntax::ShiftNode* instruction) {
+bool Emulator::executeShift(syntax::ShiftNode* instruction, bool response) {
   auto [op, cond, set, dest, src1, src2] = instruction->unpack();     // unpack the instruction
   if (!registers.checkFlags(cond)) return false;                            // returns early if condition code is not satisfied
 
@@ -421,11 +430,20 @@ bool Emulator::executeShift(syntax::ShiftNode* instruction) {
       break;
     case syntax::ASR:
     case syntax::ROR:
+      if (set) registers.setFlags(n, m, std::rotr(n, m));
+      result = std::rotr(n, m);
+      break;
     default:
+      throw RuntimeError("While attempting to perform a shift operation.", instruction->statement(), instruction->lineNumber(), 0);
       break;
   }
 
   registers[dest] = result;
+  if (response) {
+    registers.printIndex(dest); 
+    if (set) registers.printCPSR();
+  }
+
   return true;
 }
 
@@ -433,7 +451,7 @@ bool Emulator::executeShift(syntax::ShiftNode* instruction) {
  * TODO: implement
  * Executes a branch operation
  */ 
-bool Emulator::executeBranch(syntax::BranchNode* instruction) {
+bool Emulator::executeBranch(syntax::BranchNode* instruction, bool response) {
   auto [op, cond, to] = instruction->unpack();
   if (!registers.checkFlags(cond)) return false;                          // returns early if condition code is not satisfied
 
@@ -443,17 +461,20 @@ bool Emulator::executeBranch(syntax::BranchNode* instruction) {
   
   switch (op) {
     case syntax::B:
-      // std::cout << "B" << std::endl;
       registers[syntax::PC] = address;
+      if (response) registers.printIndex(syntax::PC); 
       break;
     case syntax::BL:
-      // std::cout << "BL" << std::endl;
       registers[syntax::LR] = registers[syntax::PC] + 32;
       registers[syntax::PC] = address;
+      if (response) {
+        registers.printIndex(syntax::LR); 
+        registers.printIndex(syntax::PC); 
+      }
       break;
     case syntax::BX:
-      // std::cout << "BX" << std::endl;
       registers[syntax::PC] = address;
+      if (response) registers.printIndex(syntax::PC); 
       break;
   }
 

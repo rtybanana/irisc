@@ -23,13 +23,16 @@ namespace vm {
       std::vector<widgets::HoverBox*> regions;
       Fl_Box* _title;
       Fl_Box* _details;
+      std::string cmd_string;
+      bool headless;
 
     public:
-      Instruction(int, int);
+      Instruction(int, int, bool = false);
       // Fl_Window* window;
       // void draw();
       void set(syntax::InstructionNode*, bool);
       void describe(std::string, std::string);
+      void print();
   };
 
 }

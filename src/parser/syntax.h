@@ -48,7 +48,7 @@ namespace syntax {
   class InstructionNode : public Node {
     public:
       InstructionNode(std::vector<lexer::Token>);
-      virtual std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, int>>> assemble() = 0;
+      virtual std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, std::string, int>>> assemble() = 0;
       OPERATION op() const { return _op; };
       CONDITION cond() const { return _cond; };
       bool setFlags() const { return _setFlags; };
@@ -64,7 +64,7 @@ namespace syntax {
   class BranchNode : public InstructionNode {
     public:
       BranchNode(std::vector<lexer::Token>);
-      std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, int>>> assemble() override;
+      std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, std::string, int>>> assemble() override;
       std::tuple<OPERATION, CONDITION, std::variant<REGISTER, std::string>> unpack() const { return {_op, _cond, _Rd}; };
 
     protected:
@@ -106,7 +106,7 @@ namespace syntax {
   class BiOperandNode : public InstructionNode {
     public:
       BiOperandNode(std::vector<lexer::Token>);
-      std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, int>>> assemble() override;
+      std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, std::string, int>>> assemble() override;
       REGISTER Rd() const { return _Rd; };
       FlexOperand flex() const { return _flex; };
       std::tuple<OPERATION, CONDITION, bool, REGISTER, FlexOperand> unpack() const { return {_op, _cond, _setFlags, _Rd, _flex}; };
@@ -119,7 +119,7 @@ namespace syntax {
   class TriOperandNode : public InstructionNode {
     public:
       TriOperandNode(std::vector<lexer::Token>);
-      std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, int>>> assemble() override;
+      std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, std::string, int>>> assemble() override;
       REGISTER Rd() const { return _Rd; };
       REGISTER Rn() const { return _Rn; };
       FlexOperand flex() const { return _flex; };
@@ -134,7 +134,7 @@ namespace syntax {
   class ShiftNode : public InstructionNode {
     public:
       ShiftNode(std::vector<lexer::Token>);
-      std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, int>>> assemble() override;
+      std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, std::string, int>>> assemble() override;
       REGISTER Rd() const { return _Rd; };
       REGISTER Rn() const { return _Rn; };
       std::variant<std::monostate, REGISTER, int> Rs() const { return _Rs; };
@@ -153,7 +153,7 @@ namespace syntax {
   class LoadStoreNode : public InstructionNode {
     public:
       LoadStoreNode(std::vector<lexer::Token>);
-      std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, int>>> assemble() override;
+      std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, std::string, int>>> assemble() override;
       
     protected:
       SIZE _size;

@@ -5,7 +5,7 @@
 #include <variant>
 #include <typeinfo>
 
-using namespace parser;
+using namespace syntax;
 
 Parser::Parser(lexer::Lexer& lexer) : lexer(lexer) {}
 

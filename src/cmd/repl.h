@@ -6,7 +6,7 @@
 #include "../emulator/emulator.h"
 #include "constants.h"
 
-namespace ui {
+namespace cmd {
   // prototypes
 
 
@@ -24,7 +24,7 @@ namespace ui {
     
     public:
       REPL(replxx::Replxx&);
-      void loop(vm::Emulator&);
+      void cmdloop(vm::Emulator&);
       replxx::Replxx::completions_t hook_completion(std::string const& context, int& contextLen);
       replxx::Replxx::hints_t hook_hint(std::string const& context, int& contextLen, replxx::Replxx::Color& color);
       void hook_color(std::string const& str, replxx::Replxx::colors_t& colors);

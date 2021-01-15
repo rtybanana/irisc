@@ -28,7 +28,7 @@ static void reset_cb(Fl_Widget* widget, void* group) {
 }
 
 
-Registers::Registers(int x, int y) : Fl_Group(x, y, 240, 540), registers {}, labels {}, label_borders {}, cpsr {}, flags {}, _running(false) {
+Registers::Registers(int x, int y, bool headless) : Fl_Group(x, y, 240, 540), registers {}, labels {}, label_borders {}, cpsr {false}, flags {}, _running(false), headless(headless) {
   for (int i = 0; i < registers.size(); i++) registers[i] = proxy(this, i);
 
   Fl::lock();
@@ -90,8 +90,8 @@ Registers::Registers(int x, int y) : Fl_Group(x, y, 240, 540), registers {}, lab
     flagshover->callback(hover_cb, this);
 
     for (int i = 0; i < 4; i++) {
-      FLAG f = static_cast<FLAG>(i);
-      Fl_Box* flagname = new Fl_Box(110 + (i * 30), 449, 30, 25, flagShortName[f].c_str());
+      syntax::FLAG f = static_cast<syntax::FLAG>(i);
+      Fl_Box* flagname = new Fl_Box(110 + (i * 30), 449, 30, 25, syntax::flagShortName[f].c_str());
       flagname->align(FL_ALIGN_LEFT_BOTTOM | FL_ALIGN_INSIDE);
       flagname->labelfont(FL_BOLD);
       flagname->labelcolor(FL_WHITE);
@@ -104,7 +104,7 @@ Registers::Registers(int x, int y) : Fl_Group(x, y, 240, 540), registers {}, lab
       flags[i] = flag;
 
       // explain on hover
-      widgets::HoverBox* hover = new widgets::HoverBox(110 + (i * 30), 449, 30, 25, flagTitle[f], flagExplain[f]);
+      widgets::HoverBox* hover = new widgets::HoverBox(110 + (i * 30), 449, 30, 25, syntax::flagTitle[f], syntax::flagHover[f]);
       hover->callback(hover_cb, this);
     }
 
@@ -123,14 +123,14 @@ Registers::Registers(int x, int y) : Fl_Group(x, y, 240, 540), registers {}, lab
     describe("Registers", "A simplified view of the data currently stored in the CPU. Hover over the different sections to learn what they are.");
 
     end();
-    // window->callback(gui::close_cb);
-    // window->show();
   Fl::unlock();
 
   Fl::awake();
 };
 
 void Registers::updateReg(int index, uint32_t value) {
+  if (headless) return; 
+
   Fl::lock();
     labels[index]->copy_label(regstr(value).c_str());
     // labels[index]->color(FL_YELLOW);
@@ -142,6 +142,8 @@ void Registers::updateReg(int index, uint32_t value) {
 }
 
 void Registers::prepare() {
+  if (headless) return; 
+
   Fl::lock();
     for (int i = 0; i < registers.size(); i++) {
       // labels[i]->color(vm::darker);
@@ -157,18 +159,21 @@ void Registers::prepare() {
 void Registers::reset() {
   if (_running) return;
 
-  Fl::lock();
-    for (int i = 0; i < registers.size(); i++) {
-      registers[i] = proxy(this, i);
-      // labels[i]->color(vm::darker);
-      labels[i]->labelcolor(FL_WHITE);
-      labels[i]->copy_label(regstr(0).c_str());
-      // labels[i]->redraw();
-      // label_borders[i]->redraw();
-    }
-  Fl::unlock();
+  for (int i = 0; i < registers.size(); i++) {
+    registers[i] = proxy(this, i);
 
-  Fl::awake();
+    if (!headless) {
+      Fl::lock();
+        // labels[i]->color(vm::darker);
+        labels[i]->labelcolor(FL_WHITE);
+        labels[i]->copy_label(regstr(0).c_str());
+        labels[i]->redraw();
+        label_borders[i]->redraw();
+      Fl::unlock();
+    }
+  }
+
+  if (!headless) Fl::awake();
 }
 
 std::string Registers::regstr(u_int32_t value) {
@@ -194,20 +199,22 @@ void Registers::setFlags(uint32_t op1, uint32_t op2, uint64_t result, char _oper
   // std::cout << "\n" << "sign1: " << sign1 << ", sign2: " << sign2 << ", signr: " << signr << ", operator: " << _operator << std::endl;
   // std::cout << result_ext[32] << " " << std::bitset<32>(result) << std::endl;
 
-  cpsr[N] = result_ext[31] == 1;                      // msb = 1
-  cpsr[Z] = (uint32_t)result == 0;                    // all bits = 0
-  cpsr[C] = result_ext[32];                           // unsigned overflow
+  cpsr[syntax::N] = result_ext[31] == 1;                      // msb = 1
+  cpsr[syntax::Z] = (uint32_t)result == 0;                    // all bits = 0
+  cpsr[syntax::C] = result_ext[32];                           // unsigned overflow
 
-  if (_operator == '+') cpsr[V] = sign1 == sign2 && sign1 != signr;         // two operands of the same sign result in changed sign
-  else if (_operator == '-') cpsr[V] = sign1 != sign2 && sign2 == signr;    // signs different and result sign same as subtrahend
+  if (_operator == '+') cpsr[syntax::V] = sign1 == sign2 && sign1 != signr;         // two operands of the same sign result in changed sign
+  else if (_operator == '-') cpsr[syntax::V] = sign1 != sign2 && sign2 == signr;    // signs different and result sign same as subtrahend
   
   // std::cout << "  negative flag: " << cpsr[N] << "\n"
   //           << "  zero flag: " << cpsr[Z] << "\n"
   //           << "  carry flag: " << cpsr[C] << "\n"
   //           << "  overflow flag: " << cpsr[V] << std::endl;
 
+  if (headless) return; 
+
   Fl::lock();
-    for (int flag : {N, Z, C, V}) {
+    for (int flag : {syntax::N, syntax::Z, syntax::C, syntax::V}) {
       // std::cout << std::to_string(cpsr[flag]).c_str() << std::endl;
       flags[flag]->copy_label(std::to_string(cpsr[flag]).c_str());
       // flags[flag]->redraw();
@@ -222,6 +229,8 @@ void Registers::setFlags(uint32_t op1, uint32_t op2, uint64_t result, char _oper
  */
 bool Registers::checkFlags(syntax::CONDITION cond) {
   std::bitset<4> bits(cond);
+
+  using namespace syntax;
 
   bool result;
   switch(cond) {
@@ -248,6 +257,8 @@ bool Registers::checkFlags(syntax::CONDITION cond) {
 }
 
 void Registers::describe(std::string title, std::string details) {
+  if (headless) return; 
+
   Fl::lock();
     _title->copy_label(title.c_str());
     // _title->redraw_label();
@@ -258,3 +269,32 @@ void Registers::describe(std::string title, std::string details) {
   Fl::awake();
 }
 
+void Registers::print() {
+  for (int i = 0; i < registers.size(); i++) {
+    printIndex(i);
+  }
+  // std::cout << std::endl;
+  printCPSR();
+}
+
+void Registers::printIndex(int index) {
+  if (index == syntax::SP) std::cout << "\t\033[94m sp \033[0m| " << regstr(int(registers[syntax::SP])) << std::endl;
+  else if (index == syntax::LR) std::cout << "\t\033[94m lr \033[0m| " << regstr(int(registers[syntax::LR])) << std::endl;
+  else if (index == syntax::PC) std::cout << "\t\033[94m pc \033[0m| " << regstr(int(registers[syntax::PC])) << std::endl;
+  else if (index > 9) std::cout << "\t\033[94mr" << index << " \033[0m| " << regstr(int(registers[index])) << std::endl;
+  else std::cout << "\t\033[94m r" << index << " \033[0m| " << regstr(int(registers[index])) << std::endl;
+}
+
+void Registers::printCPSR() {
+  std::cout << "\t\033[94mCPSR\033[0m|";
+  for (bool flag : cpsr) {
+    std::cout << " " << (flag ? "1" : "0") << "  ";
+  }
+  std::cout << std::endl;
+
+  std::cout << "\t     ";
+  for (char flag : {'N', 'Z', 'C', 'V'}) {
+    std::cout << " \033[94m" << flag << "\033[0m  ";
+  }
+  std::cout << std::endl;
+}

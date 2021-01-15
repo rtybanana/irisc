@@ -12,7 +12,7 @@
 #include "../lexer/lexer.h"
 #include "syntax.h"
 
-namespace parser {
+namespace syntax {
 
   class Parser {
     public:

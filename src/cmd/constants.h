@@ -14,7 +14,7 @@
 #include <FL/Fl.H>
 #include "replxx.hxx"
 
-namespace ui {
+namespace cmd {
   static std::vector<std::string> directives {
     ".text", ".data", ".global", ".asciz", ".word", ".skip"
   };

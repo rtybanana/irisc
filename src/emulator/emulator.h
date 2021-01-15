@@ -43,24 +43,29 @@ namespace vm {
       bool _step;
       double delay;
 
-      bool executeBiOperand(syntax::BiOperandNode*);
-      bool executeTriOperand(syntax::TriOperandNode*);
-      bool executeShift(syntax::ShiftNode*);
-      bool executeBranch(syntax::BranchNode*);
+      void execute(syntax::Node*, bool response = false);
+      bool executeBiOperand(syntax::BiOperandNode*, bool response = false);
+      bool executeTriOperand(syntax::TriOperandNode*, bool response = false);
+      bool executeShift(syntax::ShiftNode*, bool response = false);
+      bool executeBranch(syntax::BranchNode*, bool response = false);
       uint32_t deflex(syntax::FlexOperand);
       uint32_t applyFlexShift(syntax::SHIFT, int, int);
 
     public:
-      Emulator();
+      // Emulator();
+      Emulator(bool headless = false);
       bool running();
       bool paused() const { return _paused; };
       
       void reset();
+      void printRegisters() { registers.print(); };
+      void printCPSR() { registers.printCPSR(); };
+      void assembleLast() { instruction.print(); };
       void toggleEditor();
+
       void calculateLabelOffsets();
       // void assemble()
       void execute(std::string);
-      void execute(syntax::Node*);
       void compile(std::string);
       void running(bool);
       void run(std::string);
