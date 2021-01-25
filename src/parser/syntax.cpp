@@ -374,7 +374,7 @@ std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, std::strin
  */
 ShiftNode::ShiftNode(std::vector<lexer::Token> statement) : InstructionNode(statement) {
   auto [operation, modifier, condition] = splitOpCode(nextToken());
-  this->_op = opMap[operation];
+  this->_shiftOp = shiftMap[operation];
   this->_setFlags = modifier.empty() ? false : true;
   this->_cond = condMap[condition];
 

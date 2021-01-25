@@ -49,7 +49,11 @@ namespace syntax {
     {TST, "Test"}, {TEQ, "Test Equivalence"},
     {CMP, "Compare"}, {CMN, "Compare Negative"},
     {ORR, "Bitwise OR"}, {MOV, "Move"},
-    {BIC, "Bit Clear"}, {MVN, "Move Negative"}
+    {BIC, "Bit Clear"}, {MVN, "Move Negative"},
+
+    {LDR, "Memory Load"}, {STR, "Memory Store"},
+
+    {BX, "Branch and Exchange"}, {BL, "Branch and Link"}, {B, "Branch"}
   };
 
   static std::map<OPERATION, std::string> opExplain {
@@ -58,9 +62,9 @@ namespace syntax {
     {SUB, "Performs an arithmetic subtraction from left to right and stores the result."}, 
     {RSB, "Performs an arithmetic subtraction from right to left and stores the result."},
     {ADD, "Performs an arithmetic addition and stores the result."}, 
-    {ADC, "???"},
-    {SBC, "???"}, 
-    {RSC, "???"},
+    {ADC, "Performs the ADD operation, adding an extra one if the carry bit is set."},
+    {SBC, "Performs the SUB operation, subtracting an extra one if the carry bit is clear."}, 
+    {RSC, "Performs the RSB operation, subtracting an extra one if the carry bit is clear."},
     {TST, "Performs a bitwise AND operation, sets the CPSR flags and discards the result."},
     {TEQ, "Performs a bitwise XOR operation, sets the CPSR flags and discards the result."},
     {CMP, "Performs an arithmetic subtraction, sets the CPSR flags and discards the result."},
@@ -68,7 +72,14 @@ namespace syntax {
     {ORR, "Performs a bitwise OR operation and stores the result."},
     {MOV, "Stores the second operand value in the destination register."},
     {BIC, "Performs a bitwise AND operation with the complement of the second operand."},
-    {MVN, "Stores the additive inverse of the second operand value in the destination register."}
+    {MVN, "Stores the additive inverse of the second operand value in the destination register."},
+
+    {LDR, "Loads the data stored at the memory address in the source register into the destination register."}, 
+    {STR, "Stores the data in the destination register into the memory address in the source register."},
+
+    {BX, "Branches to a label or address and optionally switches between ARM and THUMB."}, 
+    {BL, "Sets the link register to the address of the next instruction and branches to the label or address."}, 
+    {B, "Branches to a label or address. Often used for loops and conditionals."}
   };
 
 
@@ -112,6 +123,24 @@ namespace syntax {
     {GT, "The instruction is only executed if the zero flag (Z) is clear and the negative (N) and overflow (V) flags are the same."},
     {LE, "The instruction is only executed if the zero flag (Z) is set and the negative (N) and overflow (V) flags are different."},
     {AL, "The instruction is executed unconditionally. This is the default condition."}
+  };
+
+  static std::map<CONDITION, std::string> condShortExplain {
+    {EQ, "If the zero flag (Z) is set."}, 
+    {NE, "If the zero flag (Z) is clear."}, 
+    {CS, "If the carry flag (C) is set."}, 
+    {CC, "If the carry flag (C) is clear."},
+    {MI, "If the negative flag (N) is set."}, 
+    {PL, "If the negative flag (N) is clear."},
+    {VS, "If the overflow flag (V) is set."}, 
+    {VC, "If the overflow flag (V) is clear."},
+    {HI, "If the carry flag (C) is set AND the zero flag (Z) is clear."},
+    {LS, "If the carry flag (C) is clear OR the zero flag (Z) is set."},
+    {GE, "If the negative flag (N) and the overflow flag (V) are the same."},
+    {LT, "If the negative flag (N) and the overflow flag (V) are different."},
+    {GT, "If the zero flag (Z) is clear and the negative (N) and overflow (V) flags are the same."},
+    {LE, "If the zero flag (Z) is set and the negative (N) and overflow (V) flags are different."},
+    {AL, "Unconditionally. This is the default condition."}
   };
 
 

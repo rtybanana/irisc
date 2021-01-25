@@ -91,6 +91,9 @@ void Emulator::execute(syntax::Node* node, bool response) {
   else if (dynamic_cast<syntax::LabelNode*>(node)) {
     throw InteractiveError("Label instructions are not executable on their own. Try using the GUI editor environment to execute simple assembly programs with branches.", node->statement(), node->lineNumber(), 0);
   }
+  else if (dynamic_cast<syntax::BranchNode*>(node)) {
+    throw InteractiveError("Branching not supported in interactive mode yet. It may be in future. For now use the GUI text editor.", node->statement(), node->lineNumber(), 0);
+  }
 
 }
 
@@ -259,6 +262,11 @@ void Emulator::step() {
     pause();
     run(editor->program());
   }
+}
+
+void Emulator::step(std::string program) {
+  pause();
+  run(program);
 }
 
 void Emulator::speed(double delay) {

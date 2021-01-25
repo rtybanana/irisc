@@ -97,7 +97,7 @@ TOKEN Token::tokenType(int final_state, std::string &value) {
     case 4:
       if (value[0] == '#')
         return IMM_DEC;
-      if (value[0] == 'r' || value[0] == 'R')
+      if (value[0] == 'r')
         return REGISTER;
       return DEC;
     case 6:

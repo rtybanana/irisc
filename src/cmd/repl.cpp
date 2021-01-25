@@ -252,6 +252,14 @@ void REPL::cmdloop(vm::Emulator &emulator) {
 			emulator.assembleLast();
 		}
 
+		else if (input == "operations") {
+			for (auto [name, id] : syntax::opMap) std::cout << "\t\e[91m" << std::setw(3) << name << "\e[0m | " << syntax::opExplain.at(id) << std::endl;
+		}
+
+		else if (input == "conditions") {
+			for (auto [name, id] : syntax::condMap) if (name.size() > 0) std::cout << "\t\e[91m" << std::setw(2) << name << "\e[0m | " << syntax::condTitle.at(id) << ". " << syntax::condShortExplain.at(id) << std::endl;
+		}
+
 		// Parse as assembler
 		else {
 			emulator.execute(input);

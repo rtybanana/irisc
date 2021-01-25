@@ -65,6 +65,7 @@ namespace syntax {
     public:
       BranchNode(std::vector<lexer::Token>);
       std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, std::string, int>>> assemble() override;
+      std::variant<REGISTER, std::string> Rd() const { return _Rd; };
       std::tuple<OPERATION, CONDITION, std::variant<REGISTER, std::string>> unpack() const { return {_op, _cond, _Rd}; };
 
     protected:
@@ -135,12 +136,14 @@ namespace syntax {
     public:
       ShiftNode(std::vector<lexer::Token>);
       std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, std::string, int>>> assemble() override;
+      SHIFT shiftOp() const { return _shiftOp; };
       REGISTER Rd() const { return _Rd; };
       REGISTER Rn() const { return _Rn; };
       std::variant<std::monostate, REGISTER, int> Rs() const { return _Rs; };
-      std::tuple<OPERATION, CONDITION, bool, REGISTER, REGISTER, std::variant<std::monostate, REGISTER, int>> unpack() const { return {_op, _cond, _setFlags, _Rd, _Rn, _Rs}; };
+      std::tuple<SHIFT, CONDITION, bool, REGISTER, REGISTER, std::variant<std::monostate, REGISTER, int>> unpack() const { return {_shiftOp, _cond, _setFlags, _Rd, _Rn, _Rs}; };
 
     protected:
+      SHIFT _shiftOp;
       REGISTER _Rd;
       REGISTER _Rn;
       std::variant<std::monostate, REGISTER, int> _Rs;

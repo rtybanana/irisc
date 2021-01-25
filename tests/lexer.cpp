@@ -9,7 +9,7 @@ using namespace lexer;
 /**
  * Tests for the Token class
  */
-TEST_CASE("Token Tests", "[lexer, Token]") {
+TEST_CASE("Token Tests", "[lexer, token]") {
     
     /**
      * Test that each of the different instructions are all categorised correctly by the lexer
@@ -86,6 +86,29 @@ TEST_CASE("Token Tests", "[lexer, Token]") {
     }
 
     /**
+     * Test for all the different conditions + set flags
+     */
+    SECTION("Conditions + Flags") {
+        CHECK(Token(1, "movseq").type() == BI_OPERAND);
+        CHECK(Token(1, "mvnsne").type() == BI_OPERAND);
+        CHECK(Token(1, "cmpscs").type() == BI_OPERAND);
+        CHECK(Token(1, "cmnscc").type() == BI_OPERAND);
+        CHECK(Token(1, "tstsmi").type() == BI_OPERAND);
+        CHECK(Token(1, "teqspl").type() == BI_OPERAND);
+
+        CHECK(Token(1, "addsvs").type() == TRI_OPERAND);
+        CHECK(Token(1, "subsvc").type() == TRI_OPERAND);
+        CHECK(Token(1, "andshi").type() == TRI_OPERAND);
+        CHECK(Token(1, "orrsls").type() == TRI_OPERAND);
+        CHECK(Token(1, "bicsge").type() == TRI_OPERAND);
+        CHECK(Token(1, "eorslt").type() == TRI_OPERAND);
+        CHECK(Token(1, "rsbsgt").type() == TRI_OPERAND);
+        CHECK(Token(1, "adcsle").type() == TRI_OPERAND);
+        CHECK(Token(1, "sbcsal").type() == TRI_OPERAND);
+        CHECK(Token(1, "rscs").type() == TRI_OPERAND);
+    }
+
+    /**
      * Test all the branch conditions in their own section because they are a little tricky 
      * due to the differing instruction length
      */
@@ -156,7 +179,7 @@ TEST_CASE("Token Tests", "[lexer, Token]") {
 /**
  * Tests for the Lexer class
  */
-TEST_CASE("Lexer Tests", "[lexer, Lexer]") {
+TEST_CASE("Lexer Tests", "[lexer]") {
 
     /**
      * Tests on lexically correct statements to ensure that the tokens are correctly identified
@@ -188,7 +211,7 @@ TEST_CASE("Lexer Tests", "[lexer, Lexer]") {
         }
 
         SECTION("Statement #3") {
-            std::string program = "rorsle pc, r12, #0b100101";
+            std::string program = "rorsle pc, r12, #0b10011";
             REQUIRE_NOTHROW(Lexer(program));
             
             Lexer lexer(program);
@@ -248,6 +271,18 @@ TEST_CASE("Lexer Tests", "[lexer, Lexer]") {
         }
 
         SECTION("Statement #8") {
+            std::string program = "asrcc r0, r12, r7";
+            REQUIRE_NOTHROW(Lexer(program));
+            
+            Lexer lexer(program);
+            std::vector<Token> tokens = lexer.getTokens();
+            std::vector<TOKEN> required = {SHIFT, REGISTER, COMMA, REGISTER, COMMA, REGISTER};
+
+            REQUIRE(tokens.size() == required.size());
+            for (int i = 0; i < tokens.size(); i++) CHECK(tokens[i].type() == required[i]);
+        }
+
+        SECTION("Statement #9") {
             std::string program = "ldrge r0, =variable";
             REQUIRE_NOTHROW(Lexer(program));
             
@@ -259,7 +294,7 @@ TEST_CASE("Lexer Tests", "[lexer, Lexer]") {
             for (int i = 0; i < tokens.size(); i++) CHECK(tokens[i].type() == required[i]);
         }
 
-        SECTION("Statement #9") {
+        SECTION("Statement #10") {
             std::string program = "str r0, [sp, #4]!";
             REQUIRE_NOTHROW(Lexer(program));
             
@@ -271,6 +306,20 @@ TEST_CASE("Lexer Tests", "[lexer, Lexer]") {
             for (int i = 0; i < tokens.size(); i++) CHECK(tokens[i].type() == required[i]);
         }
 
+    }
+
+    SECTION("Edge Cases") {
+        SECTION("Extended Whitespace") {
+            std::string program = "\t\t   mov    r0 \t \t\t                   \t , r4";
+            REQUIRE_NOTHROW(Lexer(program));
+            
+            Lexer lexer(program);
+            std::vector<Token> tokens = lexer.getTokens();
+            std::vector<TOKEN> required = {BI_OPERAND, REGISTER, COMMA, REGISTER};
+
+            REQUIRE(tokens.size() == required.size());
+            for (int i = 0; i < tokens.size(); i++) CHECK(tokens[i].type() == required[i]);
+        }
     }
 
     /**

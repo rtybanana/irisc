@@ -39,8 +39,8 @@ syntax::Node* Parser::parseSingle() {
     return new syntax::DirectiveNode(statement);
   }
     // throw RuntimeError("Label statement is not executable", statement, 0);
-  // if (statement[0].type() == lexer::LOAD_STORE)
-  //   return new syntax::LoadStoreNode(statement);
+  if (statement[0].type() == lexer::LOAD_STORE)
+    return new syntax::LoadStoreNode(statement);
 
   if (statement[0].type() == lexer::OP_LABEL) {
     throw SyntaxError("Invalid label-like token detected, did you forget a colon?", statement, statement[0].lineNumber(), 0);

@@ -64,7 +64,6 @@ namespace vm {
       void toggleEditor();
 
       void calculateLabelOffsets();
-      // void assemble()
       void execute(std::string);
       void compile(std::string);
       void running(bool);
@@ -73,10 +72,15 @@ namespace vm {
       void run();
       void pause() { _paused = true; };
       void step();
+      void step(std::string);
       void resume() { _paused = false; };
       void stop();
       void speed(double);
       void mode(MODE);
+
+      // Testing methods
+      int registerValue(int index) { return registers[index]; };
+      bool cpsrValue(syntax::FLAG flag) { return registers[flag]; };
   };
 }
 
