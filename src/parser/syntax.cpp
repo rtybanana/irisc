@@ -249,8 +249,9 @@ std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, std::strin
         instruction = (instruction << 4) | shift;
         explanation.push_back({"Optional Shift Amount", regTitle[shift], "Shift the flexible operand by the value in " + regTitle[shift] + ".", 4});
 
-        instruction = (instruction << 2) | shiftOp;
-        explanation.push_back({"Optional Shift Operation", shiftTitle[shiftOp], "The type of shift to perform on the flexible operand.", 2});
+        instruction = (instruction << 3) | shiftOp;                                             // 3 because extra 0 of unused space for registers
+        explanation.push_back({"Optional Shift Operation", shiftTitle[shiftOp], "The type of shift to perform on the flexible operand.", 3});
+
         instruction = (instruction << 1) | 1;
         explanation.push_back({"Optional Shift Type", "Register", "The flexible operand is optionally shifted by a register value.", 1});
       }
@@ -338,8 +339,8 @@ std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, std::strin
         instruction = (instruction << 4) | shift;
         explanation.push_back({"Optional Shift Amount", regTitle[shift], "Shift by the value in " + regTitle[shift] + ".", 4});
 
-        instruction = (instruction << 2) | shiftOp;
-        explanation.push_back({"Optional Shift Operation", shiftTitle[shiftOp], "The type of shift to perform on the flexible operand.", 2});
+        instruction = (instruction << 3) | shiftOp;                                             // 3 because extra 0 of unused space for register shifts
+        explanation.push_back({"Optional Shift Operation", shiftTitle[shiftOp], "The type of shift to perform on the flexible operand.", 3});
         instruction = (instruction << 1) | 1;
         explanation.push_back({"Optional Shift Type", "Register", "The flexible operand is optionally shifted by a register value.", 1});
       }
@@ -348,7 +349,7 @@ std::tuple<uint32_t, std::vector<std::tuple<std::string, std::string, std::strin
         instruction = (instruction << 5) | shift;
         explanation.push_back({"Optional Shift Amount", "Immediate " + std::to_string(shift), "Shift by the provided five bit immediate value (" + std::to_string(shift) + ").", 5});
 
-        instruction = ((instruction << 2) | shiftOp) << 1;
+        instruction = ((instruction << 3) | shiftOp) << 1;
         explanation.push_back({"Optional Shift Operation", shiftTitle[shiftOp], "The type of shift to perform on the flexible operand.", 2});
         explanation.push_back({"Optional Shift Type", "Immediate", "The flexible operand is optionally shifted by an immediate value.", 1});
       }
